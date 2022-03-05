@@ -37,6 +37,7 @@ sample_file = open("DataSet/test/sample.csv", "r", encoding="UTF-8")
 train_reader = csv.reader(train_file)
 test_reader = csv.reader(test_file)
 sample_reader = csv.reader(sample_file)
+# drop the header of csv file
 next(train_reader)
 next(test_reader)
 next(sample_reader)
@@ -64,11 +65,15 @@ for item in train_reader:
         all_triggers[item[0]] = {
             "id": item[0], "context": item[1], "answer": list(), "query": "找出事件中的触发词"
         }
+    # there are trigger list
     obj = all_triggers[item[0]]["answer"]
+    # 处理中文标点
     _context, _trigger, _object, _subject, _time, _location = \
         item[1].replace("－", "-").replace("～", "~"), item[2], item[3].replace("－", "-"), item[4].replace("－", "-"), \
         item[5].replace("－", "-"), item[6].replace("－", "-")
     # 特殊化处理(仅仅训练集存在这种情况->将所有的变种0~9进行替换)
+    # >>> chr(65296 + 1)
+    # '１'
     for i in range(10):
         r_c = chr(65296 + i)
         _context = _context.replace(r_c, "%d" % i)
@@ -119,21 +124,29 @@ for item in train_reader:
     sub_tmp = {"type": "subject", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间的触发词*%s*的客体为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
     tim_tmp = {"type": "time", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间的触发词*%s*的时间为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
     loc_tmp = {"type": "location", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间的触发词*%s*的地点为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
+    # 答案准备部分
+    # 主体
     if _object == "":
         obj_tmp["answer"] = {"is_exist": 0, "start": -1, "end": -1, "argument": _object}
     else:
         index = _context.index(_object)
         obj_tmp["answer"] = {"is_exist": 1, "start": index, "end": index + len(_object) - 1, "argument": _object}
+    
+    # 客体
     if _subject == "":
         sub_tmp["answer"] = {"is_exist": 0, "start": -1, "end": -1, "argument": _subject}
     else:
         index = _context.index(_subject)
         sub_tmp["answer"] = {"is_exist": 1, "start": index, "end": index + len(_subject) - 1, "argument": _subject}
+    
+    # 时间
     if _time == "":
         tim_tmp["answer"] = {"is_exist": 0, "start": -1, "end": -1, "argument": _time}
     else:
         index = _context.index(_time)
         tim_tmp["answer"] = {"is_exist": 1, "start": index, "end": index + len(_time) - 1, "argument": _time}
+    
+    # 地点
     if _location == "":
         loc_tmp["answer"] = {"is_exist": 0, "start": -1, "end": -1, "argument": _location}
     else:
@@ -147,6 +160,8 @@ for item in train_reader:
                 loc_tmp["answer"] = {"is_exist": 1, "start": index, "end": index + len(_location) - 1, "argument": _location}
             else:
                 loc_tmp["answer"] = {"is_exist": 0, "start": -1, "end": -1, "argument": ""}
+    
+    # 依次填充
     if obj_tmp["answer"]["is_exist"] == 1:
         object_arguments["exist"].append(obj_tmp)
     else:
