@@ -1,8 +1,11 @@
+from cmath import tanh
 from paddle.io import DataLoader,Dataset
-from paddlenlp.transformers import RobertaTokenizer
+from paddlenlp.transformers import RobertaTokenizer,RobertaModel
 import paddle
+import paddle.nn
 import sys
 import pickle
+import util
 
 class MyDataset(Dataset):
     def __init__(self, data, tokenizer: RobertaTokenizer, max_len):
@@ -45,6 +48,46 @@ class MyDataset(Dataset):
             "end_index": end,
         }
 
+class MyModel(paddle.nn.Layer):
+    def __init__(self,pre_train_dir: str, dropout_rate: float, name_scope=None, dtype="float32"):
+        super().__init__(name_scope, dtype)
+        self.roberta_encoder = RobertaModel.from_pretrained(pre_train_dir)
+        self.encoder_linear = paddle.nn.Sequential(
+            paddle.nn.Linear(in_features=1024,out_features=1024),
+            paddle.nn.Tanh(),
+            paddle.nn.Dropout(),
+        )
+        self.start_layer = paddle.nn.Linear(in_features=1024,out_features=1)
+        self.end_layer = paddle.nn.Linear(in_features=1024,out_features=1)
+        self.epsilon = 1e-6
+    
+    
+    def forward(self, input_ids, input_mask, input_seg, start_index=None, end_index=None):
+        encoder_rep = self.roberta_encoder(input_ids=input_ids, attention_mask=input_mask, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
+        encoder_rep = self.encoder_linear(encoder_rep)
+        # TODO: why squeeze here? origin size is (bsz,seq,1)?
+        start_logits = self.start_layer(encoder_rep).squeeze(dim=-1)  # (bsz, seq)
+        end_logits = self.end_layer(encoder_rep).squeeze(dim=-1)  # (bsz, seq)
+        # adopt softmax function across length dimension with masking mechanism
+        mask = input_mask == 0.0
+        util.masked_fill(start_logits, mask, -1e30)
+        util.masked_fill(end_logits, mask, -1e30)
+        start_prob_seq = paddle.nn.functional.softmax(start_logits, dim=1)
+        end_prob_seq = paddle.nn.functional.softmax(end_logits, dim=1)
+        if start_index is None or end_index is None:
+            return start_prob_seq, end_prob_seq
+        else:
+            # indices select
+            start_prob = start_prob_seq.gather(index=start_index.unsqueeze(dim=-1), dim=1) + self.epsilon
+            end_prob = end_prob_seq.gather(index=end_index.unsqueeze(dim=-1), dim=1) + self.epsilon
+            # TODO: this is multi classification CE?
+            start_loss = -paddle.log(start_prob) 
+            end_loss = -paddle.log(end_prob)
+            sum_loss = (start_loss + end_loss) / 2
+            avg_loss = paddle.mean(sum_loss)
+            return avg_loss
+
+
 
 if __name__ == "__main__":
     print("Hello RoBERTa Event Extraction.")
@@ -70,7 +113,7 @@ if __name__ == "__main__":
         x = pickle.load(f)
 
     tokenzier = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
-    train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
+    train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenzier, max_len=args["max_len"])
 
     train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
 
