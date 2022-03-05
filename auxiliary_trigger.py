@@ -1,6 +1,8 @@
 from paddle.io import DataLoader,Dataset
 from paddlenlp.transformers import BertTokenizer
 import paddle
+import sys
+import pickle
 
 class MyDataset(Dataset):
     def __init__(self, data, tokenizer: BertTokenizer, max_len):
@@ -42,3 +44,35 @@ class MyDataset(Dataset):
             "start_index": start,
             "end_index": end,
         }
+
+
+if __name__ == "__main__":
+    print("Hello RoBERTa Event Extraction.")
+    args = {
+        "device": "cuda:%s" % sys.argv[1][-1],
+        "init_lr": 2e-5,
+        "batch_size": 12,
+        "weight_decay": 0.01,
+        "warm_up_steps": 500,
+        "lr_decay_steps": 1500,
+        "max_steps": 2000,
+        "min_lr_rate": 1e-9,
+        "print_interval": 20,
+        "save_interval": 500,
+        "max_len": 512,
+        "save_path": "ModelStorage/auxiliary_trigger.pth",
+        "pre_train_dir": "/home/ldmc/quanlin/Pretrained_NLP_Models/Pytorch/RoBERTa_Large_ZH/",
+        "clip_norm": 0.25,
+        "dropout_rate": 0.1
+    }
+
+    with open("DataSet/process.p", "rb") as f:
+        x = pickle.load(f)
+
+    tokenizer = BertTokenizer(vocab_file="/home/ldmc/quanlin/Pretrained_NLP_Models/Pytorch/RoBERTa_Large_ZH/vocab.txt")
+    train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
+
+    train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
+
+    # m = Main(train_loader, args)
+    # m.train()
