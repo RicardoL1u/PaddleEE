@@ -141,12 +141,12 @@ class Main(object):
                     item["input_ids"], item["input_mask"], item["input_seg"], item["start_index"], item["end_index"]
                 self.optimizer.clear_gradients()
                 loss = self.model(
-                    input_ids=input_ids.to(self.args["device"]),
-                    input_mask=input_mask.to(self.args["device"]),
-                    input_seg=input_seg.to(self.args["device"]),
-                    start_index=start_index.to(self.args["device"]),
-                    end_index=end_index.to(self.args["device"])
-                )
+                    input_ids=input_ids,
+                    input_mask=input_mask,
+                    input_seg=input_seg,
+                    start_index=start_index,
+                    end_index=end_index
+                ).to(self.args["device"])
                 loss.backward()
                 # TODO:what does this mean here?
                 paddle.nn.ClipGradByGlobalNorm(group_name=self.model.parameters(), clip_norm=self.args["clip_norm"])
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         "clip_norm": 0.25,
         "dropout_rate": 0.1
     }
-
+    paddle.set_device('gpu:0')
     with open("DataSet/process.p", "rb") as f:
         x = pickle.load(f)
 
