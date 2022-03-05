@@ -33,20 +33,18 @@ class MyDataset(Dataset):
             c = c[:self.max_len-1]
         c += ["[SEP]"]
         input_ids = self.tokenizer.convert_tokens_to_ids(c)
-        input_mask = [True] * len(input_ids)
+        input_mask = [1] * len(input_ids)
         input_seg = [self.SEG_Q] * (len(query_tokens) + 2) + [self.SEG_P] * (len(input_ids) - 2 - len(query_tokens))
         context_end = len(input_ids) - 1
         extra = self.max_len - len(input_ids)
-        
         if extra > 0:
             input_ids += [self.ID_PAD] * extra
-            input_mask += [False] * extra
+            input_mask += [0] * extra
             input_seg += [self.SEG_P] * extra
-        # print(input_mask)
         return {
             "input_ids": paddle.to_tensor(input_ids,dtype='int64'),
             "input_seg": paddle.to_tensor(input_seg,dtype='int64'),
-            "input_mask": paddle.to_tensor(input_mask,dtype='bool'),
+            "input_mask": paddle.to_tensor(input_mask,dtype='int32'),
             "start_index": start,
             "end_index": end,
         }

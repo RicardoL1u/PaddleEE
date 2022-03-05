@@ -1,5 +1,5 @@
 import unittest
-from paddlenlp.transformers import RobertaModel,RobertaTokenizer
+from paddlenlp.transformers import RobertaModel,RobertaTokenizer,BertModel,BertTokenizer
 from auxiliary_trigger import MyDataset
 from paddle.io import DataLoader
 import pickle
@@ -23,12 +23,15 @@ class TestAux(unittest.TestCase):
             x = pickle.load(f)
 
         # tokenizer = BertTokenizer(vocab_file="/home/ldmc/quanlin/Pretrained_NLP_Models/Pytorch/RoBERTa_Large_ZH/vocab.txt")
-        tokenizer = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
-        roberta = RobertaModel.from_pretrained('roberta-wwm-ext')
+        # tokenizer = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
+        # roberta = RobertaModel.from_pretrained('roberta-wwm-ext')
         
-        inputs = tokenizer("Welcome to use PaddlePaddle and PaddleNLP!")
+        tokenizer = BertTokenizer.from_pretrained('bert-wwm-chinese')
+        model = BertModel.from_pretrained('bert-wwm-chinese')
+
+        inputs = tokenizer("欢迎使用百度飞桨")
         inputs = {k:paddle.to_tensor([v]) for (k, v) in inputs.items()}
-        sequence_output, pooled_output = roberta(**inputs)
+        sequence_output, pooled_output = model(**inputs)
         print(inputs)
         print(len(inputs))
         print()
@@ -42,7 +45,7 @@ class TestAux(unittest.TestCase):
             print(input_ids)
             print(input_mask)
             print(input_seg)
-            encoder_rep = roberta(input_ids=input_ids, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
+            encoder_rep = model(input_ids=input_ids,attention_mask=input_mask, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
             print(encoder_rep)
             break
 if __name__ == "__main__":
