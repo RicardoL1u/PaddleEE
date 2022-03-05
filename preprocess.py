@@ -207,6 +207,7 @@ output["valid_dominant_trigger_items"] = dominant_items[:valid_dominant_trigger_
 output["train_aux_trigger_items"] = aux_items
 
 # step2: 整理划分各论元数据
+# 成比例 划分，添加 exist 与 non-exists
 x = int((len(object_arguments["exist"]) / 8000) * valid_argument_number)
 y = valid_argument_number - x
 output["train_argument_items"].extend(object_arguments["exist"][x:] + object_arguments["not_exist"][y:])
