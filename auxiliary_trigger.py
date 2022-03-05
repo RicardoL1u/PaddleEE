@@ -123,7 +123,7 @@ class Main(object):
             {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
              'weight_decay_rate': 0.0}
         ]
-
+        print(optimizer_grouped_parameters)
         self.optimizer = optimizer.AdamW(params=optimizer_grouped_parameters, lr=args["init_lr"])
         self.schedule = WarmUp_LinearDecay(optimizer=self.optimizer, init_rate=args["init_lr"],
                                            warm_up_steps=args["warm_up_steps"],
