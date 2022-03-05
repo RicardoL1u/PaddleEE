@@ -7,7 +7,7 @@ import paddle.nn
 import sys
 import pickle
 import util
-
+import datetime
 class MyDataset(Dataset):
     def __init__(self, data, tokenizer: RobertaTokenizer, max_len):
         self.data = data
@@ -98,7 +98,7 @@ class WarmUp_LinearDecay:
         self.min_lr_rate = min_lr_rate
         self.optimizer_step = 0
 
-    def step(self):
+    def minimize(self,loss):
         self.optimizer_step += 1
         if self.optimizer_step <= self.warm_up_steps:
             rate = (self.optimizer_step / self.warm_up_steps) * self.init_rate
@@ -107,7 +107,60 @@ class WarmUp_LinearDecay:
         else:
             rate = self.min_lr_rate
         self.optimizer.set_lr(rate)
-        self.optimizer.step()
+        self.optimizer.minimize(loss)
+
+class Main(object):
+    def __init__(self, train_loader, args):
+        self.args = args
+        self.train_loader = train_loader
+        self.model = MyModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"])
+
+        param_optimizer = list(self.model.named_parameters())
+        no_decay = ['bias', 'gamma', 'beta']
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+             'weight_decay_rate': args["weight_decay"]},
+            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+             'weight_decay_rate': 0.0}
+        ]
+
+        self.optimizer = optimizer.AdamW(params=optimizer_grouped_parameters, lr=args["init_lr"])
+        self.schedule = WarmUp_LinearDecay(optimizer=self.optimizer, init_rate=args["init_lr"],
+                                           warm_up_steps=args["warm_up_steps"],
+                                           decay_steps=args["lr_decay_steps"], min_lr_rate=args["min_lr_rate"])
+        self.model.to(device=args["device"])
+
+    def train(self):
+        self.model.train()
+        steps = 0
+        while True:
+            if steps >= self.args["max_steps"]:
+                break
+            for item in self.train_loader:
+                input_ids, input_mask, input_seg, start_index, end_index = \
+                    item["input_ids"], item["input_mask"], item["input_seg"], item["start_index"], item["end_index"]
+                self.optimizer.clear_gradients()
+                loss = self.model(
+                    input_ids=input_ids.to(self.args["device"]),
+                    input_mask=input_mask.to(self.args["device"]),
+                    input_seg=input_seg.to(self.args["device"]),
+                    start_index=start_index.to(self.args["device"]),
+                    end_index=end_index.to(self.args["device"])
+                )
+                loss.backward()
+                # TODO:what does this mean here?
+                paddle.nn.ClipGradByGlobalNorm(group_name=self.model.parameters(), clip_norm=self.args["clip_norm"])
+                self.schedule.minimize(loss=loss)
+                steps += 1
+                if steps % self.args["print_interval"] == 0:
+                    print("{} || [{}] || loss {:.3f}".format(
+                        datetime.datetime.now(), steps, loss.item()
+                    ))
+                if steps % self.args["save_interval"] == 0:
+                    paddle.save(self.model.state_dict(), f=self.args["save_path"])
+                    print("current model checkpoint has been saved successfully in ModelStorage")
+                if steps >= self.args["max_steps"]:
+                    break
 
 
 if __name__ == "__main__":
@@ -138,5 +191,5 @@ if __name__ == "__main__":
 
     train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
 
-    # m = Main(train_loader, args)
-    # m.train()
+    m = Main(train_loader, args)
+    m.train()
