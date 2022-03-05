@@ -1,11 +1,11 @@
 from paddle.io import DataLoader,Dataset
-from paddlenlp.transformers import BertTokenizer
+from paddlenlp.transformers import RobertaTokenizer
 import paddle
 import sys
 import pickle
 
 class MyDataset(Dataset):
-    def __init__(self, data, tokenizer: BertTokenizer, max_len):
+    def __init__(self, data, tokenizer: RobertaTokenizer, max_len):
         self.data = data
         self.tokenizer = tokenizer
         self.max_len = max_len
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     with open("DataSet/process.p", "rb") as f:
         x = pickle.load(f)
 
-    tokenizer = BertTokenizer(vocab_file="/home/ldmc/quanlin/Pretrained_NLP_Models/Pytorch/RoBERTa_Large_ZH/vocab.txt")
+    tokenzier = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
     train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
 
     train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
