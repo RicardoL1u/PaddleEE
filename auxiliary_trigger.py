@@ -166,7 +166,7 @@ class Main(object):
 if __name__ == "__main__":
     print("Hello RoBERTa Event Extraction.")
     args = {
-        "device": "cuda:%s" % sys.argv[1][-1],
+        "device": "gpu:0",
         "init_lr": 2e-5,
         "batch_size": 12,
         "weight_decay": 0.01,
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         "save_interval": 500,
         "max_len": 512,
         "save_path": "ModelStorage/auxiliary_trigger.pth",
-        "pre_train_dir": "/home/ldmc/quanlin/Pretrained_NLP_Models/Pytorch/RoBERTa_Large_ZH/",
+        "pre_train_dir": "roberta-wwm-ext",
         "clip_norm": 0.25,
         "dropout_rate": 0.1
     }
