@@ -44,7 +44,7 @@ class MyDataset(Dataset):
         return {
             "input_ids": paddle.to_tensor(input_ids,dtype='int64'),
             "input_seg": paddle.to_tensor(input_seg,dtype='int64'),
-            "input_mask": paddle.to_tensor(input_mask,dtype='float32'),
+            "input_mask": paddle.to_tensor(input_mask,dtype='int64'),
             "start_index": start,
             "end_index": end,
         }
@@ -186,8 +186,8 @@ if __name__ == "__main__":
     with open("DataSet/process.p", "rb") as f:
         x = pickle.load(f)
 
-    tokenzier = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
-    train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenzier, max_len=args["max_len"])
+    tokenizer = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
+    train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
 
     train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
 
