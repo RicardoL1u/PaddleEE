@@ -1,7 +1,7 @@
 from cmath import tanh
 from paddle.io import DataLoader,Dataset
 from paddlenlp.transformers import RobertaTokenizer,RobertaModel
-from paddle import optimizer
+from paddle import dtype, optimizer
 import paddle
 import paddle.nn
 import sys
@@ -42,9 +42,9 @@ class MyDataset(Dataset):
             input_mask += [0.0] * extra
             input_seg += [self.SEG_P] * extra
         return {
-            "input_ids": paddle.to_tensor(input_ids).long(),
-            "input_seg": paddle.to_tensor(input_seg).long(),
-            "input_mask": paddle.to_tensor(input_mask).float(),
+            "input_ids": paddle.to_tensor(input_ids,dtype='int64'),
+            "input_seg": paddle.to_tensor(input_seg,dtype='int64'),
+            "input_mask": paddle.to_tensor(input_mask,dtype='float32'),
             "start_index": start,
             "end_index": end,
         }
