@@ -8,7 +8,7 @@ import paddle.nn
 import sys
 import pickle
 
-import torch
+# import torch
 import util
 import datetime
 
@@ -206,7 +206,7 @@ class Main(object):
                     span_mask=span_mask
                 )
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.args["clip_norm"])
+                paddle.nn.ClipGradByGlobalNorm(group_name=self.model.parameters(), clip_norm=self.args["clip_norm"])
                 self.schedule.step()
                 steps += 1
                 if steps % self.args["print_interval"] == 0:
@@ -224,7 +224,7 @@ class Main(object):
     def eval(self):
         self.model.eval()
         y_pred, y_true = [], []
-        with torch.no_grad():
+        with paddle.no_grad():
             for item in self.valid_loader:
                 input_ids, input_mask, input_seg, span_mask = item["input_ids"], item["input_mask"], item["input_seg"], item["span_mask"]
                 y_true.extend(item["triggers"])
