@@ -146,7 +146,7 @@ class Main(object):
                     input_seg=input_seg,
                     start_index=start_index,
                     end_index=end_index
-                ).to(self.args["device"])
+                )
                 loss.backward()
                 # TODO:what does this mean here?
                 paddle.nn.ClipGradByGlobalNorm(group_name=self.model.parameters(), clip_norm=self.args["clip_norm"])
