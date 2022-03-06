@@ -129,8 +129,8 @@ class MyModel(paddle.nn.Layer):
             return start_prob_seq, end_prob_seq, span_prob
         else:
             # 计算start和end的loss
-            start_loss = self.selfc(input=paddle.reshape(start_logits,[-1, 2]), target=paddle.reshape(start_seq_label,[-1,]))
-            end_loss = self.selfc(input=paddle.reshape(end_logits,[-1, 2]), target=paddle.reshape(end_seq_label,[-1,]))
+            start_loss = self.selfc(input=paddle.reshape(start_logits,[-1, 2]), label=paddle.reshape(start_seq_label,[-1,]))
+            end_loss = self.selfc(input=paddle.reshape(end_logits,[-1, 2]), label=paddle.reshape(end_seq_label,[-1,]))
             sum_loss = start_loss + end_loss
             sum_loss *= paddle.reshape(seq_mask,[-1,])
             avg_se_loss = self.alpha * paddle.sum(sum_loss) / (paddle.nonzero(seq_mask, as_tuple=False).shape[0])
