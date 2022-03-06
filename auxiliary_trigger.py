@@ -73,8 +73,8 @@ class MyModel(paddle.nn.Layer):
         mask = input_mask == 0.0
         util.masked_fill(start_logits, mask, -1e30)
         util.masked_fill(end_logits, mask, -1e30)
-        start_prob_seq = paddle.nn.functional.softmax(start_logits, dim=1)
-        end_prob_seq = paddle.nn.functional.softmax(end_logits, dim=1)
+        start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
+        end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=1)
         if start_index is None or end_index is None:
             return start_prob_seq, end_prob_seq
         else:
