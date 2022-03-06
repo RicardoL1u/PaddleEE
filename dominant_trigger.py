@@ -36,8 +36,8 @@ class MyDataset(Dataset):
         # A BERT sequence has the following format:
         # single sequence: [CLS] X [SEP]
         # pair of sequences: [CLS] A [SEP] B [SEP]
-        start = 1 + 1 + len(query_tokens) + answers["start"]  # 第一个1代表前插的[CLS],第二个1代表前插的[SEP_A]
-        end = 1 + 1 + len(query_tokens) + answers["end"]  # 第一个1代表前插的[CLS],第二个1代表前插的[SEP_A]
+        # start = 1 + 1 + len(query_tokens) + answers["start"]  # 第一个1代表前插的[CLS],第二个1代表前插的[SEP_A]
+        # end = 1 + 1 + len(query_tokens) + answers["end"]  # 第一个1代表前插的[CLS],第二个1代表前插的[SEP_A]
         c = ["[CLS]"] + query_tokens + ["[SEP]"] + context_tokens
         if len(c) > self.max_len - 1:
             c = c[:self.max_len-1]
