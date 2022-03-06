@@ -81,3 +81,58 @@ class MyDataset(Dataset):
             "span_mask": paddle.to_tensor(span_mask,dtype='float32')
         }
 
+class MyModel(paddle.nn.Layer):
+    def __init__(self,pre_train_dir: str, dropout_rate: float, alpha, beta):
+        super().__init__()
+        self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
+        self.encoder_linear = paddle.nn.Sequential(
+            paddle.nn.Linear(in_features=768,out_features=768),
+            paddle.nn.Tanh(),
+            paddle.nn.Dropout(),
+        )
+        self.start_layer = paddle.nn.Linear(in_features=768,out_features=2)
+        self.end_layer = paddle.nn.Linear(in_features=768,out_features=2)
+        self.span1_layer = paddle.nn.Linear(in_features=1024, out_features=1, bias=False)
+        self.span2_layer = paddle.nn.Linear(in_features=1024, out_features=1, bias=False)  # span1和span2是span_layer的拆解, 减少计算时的显存占用
+        self.selfc = paddle.nn.CrossEntropyLoss(weight=paddle.to_tensor([1.0,10.0],dtype='float32'), reduction="none")
+        self.alpha = alpha
+        self.beta = beta
+        self.epsilon = 1e-6
+    
+    
+    def forward(self, input_ids, input_mask, input_seg, span_mask,
+                start_seq_label=None, end_seq_label=None, span_label=None, seq_mask=None):        
+
+        bsz, seq_len = input_ids.shape[0], input_ids.shape[1]
+        encoder_rep = self.roberta_encoder(input_ids=input_ids,  token_type_ids=input_seg)[0]  # (bsz, seq, dim)
+        encoder_rep = self.encoder_linear(encoder_rep)
+        
+        start_logits = paddle.squeeze(self.start_layer(encoder_rep)) # (bsz, seq)
+        end_logits = paddle.squeeze(self.end_layer(encoder_rep))  # (bsz, seq)
+        span1_logits = self.span1_layer(encoder_rep)  # (bsz, seq, 1)
+        span2_logits = paddle.squeeze(self.span2_layer(encoder_rep))  # (bsz, seq)
+        span_logits = paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]) + paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1])
+
+        # adopt softmax function across length dimension with masking mechanism
+        util.masked_fill(start_logits, input_mask == 0.0, -1e30)
+        util.masked_fill(end_logits, input_mask == 0.0, -1e30)
+        start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
+        end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=1)
+        
+        util.masked_fill(span_logits,span_mask==0,-1e30)
+        span_prob = paddle.nn.functional.softmax(span_logits,axis=-1) # (bsz,seq,seq)
+        
+        if start_seq_label is None or end_seq_label is None or span_label is None or seq_mask is None:
+            return start_prob_seq, end_prob_seq, span_prob
+        else:
+            # 计算start和end的loss
+            start_loss = self.selfc(input=paddle.reshape(start_logits,[-1, 2]), target=paddle.reshape(start_seq_label,[-1,]))
+            end_loss = self.selfc(input=paddle.reshape(end_logits,[-1, 2]), target=paddle.reshape(end_seq_label,[-1,]))
+            sum_loss = start_loss + end_loss
+            sum_loss *= paddle.reshape(seq_mask,[-1,])
+            avg_se_loss = self.alpha * paddle.sum(sum_loss) / (paddle.nonzero(seq_mask, as_tuple=False).shape[0])
+
+            # 计算span loss
+            span_loss = (-paddle.log(span_prob + self.epsilon)) * span_label
+            avg_span_loss = self.beta * paddle.sum(span_loss) / (paddle.nonzero(span_label, as_tuple=False).shape[0])
+            return avg_se_loss + avg_span_loss

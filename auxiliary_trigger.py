@@ -56,7 +56,7 @@ class MyModel(paddle.nn.Layer):
         self.encoder_linear = paddle.nn.Sequential(
             paddle.nn.Linear(in_features=768,out_features=768),
             paddle.nn.Tanh(),
-            paddle.nn.Dropout(),
+            paddle.nn.Dropout(p=dropout_rate),
         )
         self.start_layer = paddle.nn.Linear(in_features=768,out_features=1)
         self.end_layer = paddle.nn.Linear(in_features=768,out_features=1)
