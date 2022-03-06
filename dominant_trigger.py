@@ -7,6 +7,8 @@ import paddle
 import paddle.nn
 import sys
 import pickle
+
+import torch
 import util
 import datetime
 
@@ -122,6 +124,7 @@ class MyModel(paddle.nn.Layer):
         util.masked_fill(span_logits,span_mask==0,-1e30)
         span_prob = paddle.nn.functional.softmax(span_logits,axis=-1) # (bsz,seq,seq)
         
+        # if there is no answers, returen the predict results
         if start_seq_label is None or end_seq_label is None or span_label is None or seq_mask is None:
             return start_prob_seq, end_prob_seq, span_prob
         else:
@@ -157,3 +160,143 @@ class WarmUp_LinearDecay:
             rate = self.min_lr_rate
         self.optimizer.set_lr(rate)
         self.optimizer.step()
+
+
+class Main(object):
+    def __init__(self, train_loader, valid_loader, args):
+        self.args = args
+        self.train_loader = train_loader
+        self.valid_loader = valid_loader
+        self.model = MyModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"], alpha=args["alpha"],
+                             beta=args["beta"])
+
+        param_optimizer = list(self.model.named_parameters())
+        no_decay = ['bias', 'gamma', 'beta']
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+             'weight_decay_rate': args["weight_decay"]},
+            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+             'weight_decay_rate': 0.0}
+        ]
+
+        self.optimizer = optimizer.AdamW(parameters=optimizer_grouped_parameters, learning_rate=args["init_lr"])
+        self.schedule = WarmUp_LinearDecay(optimizer=self.optimizer, init_rate=args["init_lr"],
+                                           warm_up_steps=args["warm_up_steps"],
+                                           decay_steps=args["lr_decay_steps"], min_lr_rate=args["min_lr_rate"])
+        self.model.to(device=args["device"])
+
+    def train(self):
+        best_em = 0.0
+        self.model.train()
+        steps = 0
+        while True:
+            for item in self.train_loader:
+                input_ids, input_mask, input_seg, seq_mask, start_seq_label, end_seq_label, span_label, span_mask = \
+                    item["input_ids"], item["input_mask"], item["input_seg"], item["seq_mask"], item["start_seq_label"], \
+                    item["end_seq_label"], item["span_label"], item["span_mask"]
+                self.optimizer.clear_gradients()
+                loss = self.model(
+                    input_ids=input_ids,
+                    input_mask=input_mask,
+                    input_seg=input_seg,
+                    seq_mask=seq_mask,
+                    start_seq_label=start_seq_label,
+                    end_seq_label=end_seq_label,
+                    span_label=span_label,
+                    span_mask=span_mask
+                )
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.args["clip_norm"])
+                self.schedule.step()
+                steps += 1
+                if steps % self.args["print_interval"] == 0:
+                    print("{} || [{}] || loss {:.3f}".format(
+                        datetime.datetime.now(), steps, loss.item()
+                    ))
+                if steps % self.args["eval_interval"] == 0:
+                    f, em = self.eval()
+                    print("-*- eval F %.3f || EM %.3f -*-" % (f, em))
+                    if em > best_em:
+                        best_em = em
+                        paddle.save(obj=self.model.state_dict(), path=self.args["save_path"])
+                        print("current best model checkpoint has been saved successfully in ModelStorage")
+
+    def eval(self):
+        self.model.eval()
+        y_pred, y_true = [], []
+        with torch.no_grad():
+            for item in self.valid_loader:
+                input_ids, input_mask, input_seg, span_mask = item["input_ids"], item["input_mask"], item["input_seg"], item["span_mask"]
+                y_true.extend(item["triggers"])
+                s_seq, e_seq, p_seq = self.model(
+                    input_ids=input_ids,
+                    input_mask=input_mask,
+                    input_seg=input_seg,
+                    span_mask=span_mask
+                )
+                
+                s_seq = s_seq.cpu().numpy()
+                e_seq = e_seq.cpu().numpy()
+                p_seq = p_seq.cpu().numpy()
+                for i in range(len(s_seq)):
+                    y_pred.append(self.dynamic_search(s_seq[i], e_seq[i], p_seq[i], item["context"][i], item["context_range"][i]))
+        self.model.train()
+        return self.calculate_f1(y_pred=y_pred, y_true=y_true)
+
+    def dynamic_search(self, s_seq, e_seq, p_seq, context, context_range):
+        ans_index = []
+        t = context_range.split("-")
+        c_start, c_end = int(t[0]), int(t[1])
+        # 先找出所有被判别为开始和结束的位置索引
+        i_start, i_end = [], []
+        for i in range(c_start, c_end):
+            if s_seq[i][1] > s_seq[i][0]:
+                i_start.append(i)
+            if e_seq[i][1] > e_seq[i][0]:
+                i_end.append(i)
+        # 然后遍历i_end
+        cur_end = -1
+        for e in i_end:
+            s = []
+            for i in i_start:
+                if e >= i >= cur_end and (e - i) <= self.args["max_trigger_len"]:
+                    s.append(i)
+            max_s = 0.0
+            t = None
+            for i in s:
+                if p_seq[i, e] > max_s:
+                    t = (i, e)
+                    max_s = p_seq[i, e]
+            cur_end = e
+            if t is not None:
+                ans_index.append(t)
+        out = []
+        for item in ans_index:
+            out.append(context[item[0] - c_start:item[1] - c_start + 1])
+        return out
+
+    @staticmethod
+    def calculate_f1(y_pred, y_true):
+        exact_match_cnt = 0
+        exact_sum_cnt = 0
+        char_match_cnt = 0
+        char_pred_sum = char_true_sum = 0
+        for i in range(len(y_true)):
+            x = y_pred[i]
+            y = y_true[i].split("&")
+            exact_sum_cnt += len(y)
+            for k in x:
+                if k in y:
+                    exact_match_cnt += 1
+            x = "".join(x)
+            y = "".join(y)
+            char_pred_sum += len(x)
+            char_true_sum += len(y)
+            for k in x:
+                if k in y:
+                    char_match_cnt += 1
+        em = exact_match_cnt / exact_sum_cnt
+        precision_char = char_match_cnt / char_pred_sum
+        recall_char = char_match_cnt / char_true_sum
+        f1 = (2 * precision_char * recall_char) / (recall_char + precision_char)
+        return (em + f1) / 2, em
