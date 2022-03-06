@@ -1,6 +1,6 @@
 from cmath import tanh
 from paddle.io import DataLoader,Dataset
-from paddlenlp.transformers import RobertaTokenizer,RobertaModel
+from paddlenlp.transformers import BertTokenizer,BertModel
 from paddle import dtype, optimizer
 import paddle
 import paddle.nn
@@ -9,7 +9,7 @@ import pickle
 import util
 import datetime
 class MyDataset(Dataset):
-    def __init__(self, data, tokenizer: RobertaTokenizer, max_len):
+    def __init__(self, data, tokenizer: BertTokenizer, max_len):
         self.data = data
         self.tokenizer = tokenizer
         self.max_len = max_len
@@ -52,7 +52,7 @@ class MyDataset(Dataset):
 class MyModel(paddle.nn.Layer):
     def __init__(self,pre_train_dir: str, dropout_rate: float, name_scope=None, dtype="float32"):
         super().__init__(name_scope, dtype)
-        self.roberta_encoder = RobertaModel.from_pretrained(pre_train_dir)
+        self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
         self.encoder_linear = paddle.nn.Sequential(
             paddle.nn.Linear(in_features=1024,out_features=1024),
             paddle.nn.Tanh(),
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         "save_interval": 500,
         "max_len": 512,
         "save_path": "ModelStorage/auxiliary_trigger.pth",
-        "pre_train_dir": "roberta-wwm-ext",
+        "pre_train_dir": "bert-wwm-chinese",
         "clip_norm": 0.25,
         "dropout_rate": 0.1
     }
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     with open("DataSet/process.p", "rb") as f:
         x = pickle.load(f)
 
-    tokenizer = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
+    tokenizer = BertTokenizer.from_pretrained('bert-wwm-chinese')
     train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
 
     train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
