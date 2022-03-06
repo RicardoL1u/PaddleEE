@@ -1,10 +1,8 @@
-from cmath import tanh
 from paddle.io import DataLoader,Dataset
 from paddlenlp.transformers import BertTokenizer,BertModel
 from paddle import dtype, optimizer
 import paddle
 import paddle.nn
-import sys
 import pickle
 import util
 import datetime
