@@ -328,7 +328,7 @@ if __name__ == "__main__":
     with open("DataSet/process.p", "rb") as f:
         x = pickle.load(f)
 
-    tokenizer = BertTokenizer("bert-wwm-chinese")
+    tokenizer = BertTokenizer.from_pretrained("bert-wwm-chinese")
     train_dataset = MyDataset(data=x["train_dominant_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
     valid_dataset = MyDataset(data=x["valid_dominant_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
 
