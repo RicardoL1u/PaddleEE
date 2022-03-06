@@ -54,12 +54,12 @@ class MyModel(paddle.nn.Layer):
         super().__init__(name_scope, dtype)
         self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
         self.encoder_linear = paddle.nn.Sequential(
-            paddle.nn.Linear(in_features=1024,out_features=1024),
+            paddle.nn.Linear(in_features=768,out_features=768),
             paddle.nn.Tanh(),
             paddle.nn.Dropout(),
         )
-        self.start_layer = paddle.nn.Linear(in_features=1024,out_features=1)
-        self.end_layer = paddle.nn.Linear(in_features=1024,out_features=1)
+        self.start_layer = paddle.nn.Linear(in_features=768,out_features=1)
+        self.end_layer = paddle.nn.Linear(in_features=768,out_features=1)
         self.epsilon = 1e-6
     
     
