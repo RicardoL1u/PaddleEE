@@ -67,8 +67,8 @@ class MyModel(paddle.nn.Layer):
         encoder_rep = self.roberta_encoder(input_ids=input_ids,  token_type_ids=input_seg)[0]  # (bsz, seq, dim)
         encoder_rep = self.encoder_linear(encoder_rep)
         # TODO: why squeeze here? origin size is (bsz,seq,1)?
-        start_logits = self.start_layer(encoder_rep).squeeze(dim=-1)  # (bsz, seq)
-        end_logits = self.end_layer(encoder_rep).squeeze(dim=-1)  # (bsz, seq)
+        start_logits = paddle.squeeze(self.start_layer(encoder_rep)) # (bsz, seq)
+        end_logits = paddle.squeeze(self.end_layer(encoder_rep))  # (bsz, seq)
         # adopt softmax function across length dimension with masking mechanism
         mask = input_mask == 0.0
         util.masked_fill(start_logits, mask, -1e30)

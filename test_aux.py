@@ -4,6 +4,7 @@ from auxiliary_trigger import MyDataset
 from paddle.io import DataLoader
 import pickle
 import paddle
+import paddle.nn
 import sys
 class TestAux(unittest.TestCase):
     # def test_dataloader(self):
@@ -46,7 +47,10 @@ class TestAux(unittest.TestCase):
             print(input_mask)
             print(input_seg)
             encoder_rep = model(input_ids=input_ids, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
-            print(encoder_rep)
+            start_layer = paddle.nn.Linear(in_features=768,out_features=1)
+            start_logits = paddle.squeeze(start_layer(encoder_rep))
+            print(start_logits)
+            # print(encoder_rep)
             break
 if __name__ == "__main__":
     unittest.main()
