@@ -94,8 +94,8 @@ class MyModel(paddle.nn.Layer):
         )
         self.start_layer = paddle.nn.Linear(in_features=768,out_features=2)
         self.end_layer = paddle.nn.Linear(in_features=768,out_features=2)
-        self.span1_layer = paddle.nn.Linear(in_features=768, out_features=1, bias=False)
-        self.span2_layer = paddle.nn.Linear(in_features=768, out_features=1, bias=False)  # span1和span2是span_layer的拆解, 减少计算时的显存占用
+        self.span1_layer = paddle.nn.Linear(in_features=768, out_features=1, bias_attr=False)
+        self.span2_layer = paddle.nn.Linear(in_features=768, out_features=1, bias_attr=False)  # span1和span2是span_layer的拆解, 减少计算时的显存占用
         self.selfc = paddle.nn.CrossEntropyLoss(weight=paddle.to_tensor([1.0,10.0],dtype='float32'), reduction="none")
         self.alpha = alpha
         self.beta = beta
