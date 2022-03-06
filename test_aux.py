@@ -45,7 +45,7 @@ class TestAux(unittest.TestCase):
             print(input_ids)
             print(input_mask)
             print(input_seg)
-            encoder_rep = model(input_ids=input_ids,attention_mask=input_mask, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
+            encoder_rep = model(input_ids=input_ids, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
             print(encoder_rep)
             break
 if __name__ == "__main__":
