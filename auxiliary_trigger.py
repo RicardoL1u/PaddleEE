@@ -98,7 +98,7 @@ class WarmUp_LinearDecay:
         self.min_lr_rate = min_lr_rate
         self.optimizer_step = 0
 
-    def minimize(self,loss):
+    def step(self):
         self.optimizer_step += 1
         if self.optimizer_step <= self.warm_up_steps:
             rate = (self.optimizer_step / self.warm_up_steps) * self.init_rate
@@ -107,7 +107,8 @@ class WarmUp_LinearDecay:
         else:
             rate = self.min_lr_rate
         self.optimizer.set_lr(rate)
-        self.optimizer.minimize(loss)
+        self.optimizer.step()
+        # self.optimizer.minimize(loss)
 
 class Main(object):
     def __init__(self, train_loader, args):
@@ -150,7 +151,7 @@ class Main(object):
                 loss.backward()
                 # TODO:what does this mean here?
                 paddle.nn.ClipGradByGlobalNorm(group_name=self.model.parameters(), clip_norm=self.args["clip_norm"])
-                self.schedule.minimize(loss=loss)
+                self.schedule.step()
                 steps += 1
                 if steps % self.args["print_interval"] == 0:
                     print("{} || [{}] || loss {:.3f}".format(
