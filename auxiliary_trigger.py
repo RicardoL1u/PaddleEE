@@ -50,6 +50,7 @@ class MyDataset(Dataset):
         }
 
 class MyModel(paddle.nn.Layer):
+    # TODO: the name_scope and dtype is actually useless
     def __init__(self,pre_train_dir: str, dropout_rate: float, name_scope=None, dtype="float32"):
         super().__init__(name_scope, dtype)
         self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
