@@ -64,7 +64,7 @@ class MyModel(paddle.nn.Layer):
     
     
     def forward(self, input_ids, input_mask, input_seg, start_index=None, end_index=None):
-        encoder_rep = self.roberta_encoder(input_ids=input_ids, attention_mask=input_mask, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
+        encoder_rep = self.roberta_encoder(input_ids=input_ids,  token_type_ids=input_seg)[0]  # (bsz, seq, dim)
         encoder_rep = self.encoder_linear(encoder_rep)
         # TODO: why squeeze here? origin size is (bsz,seq,1)?
         start_logits = self.start_layer(encoder_rep).squeeze(dim=-1)  # (bsz, seq)
