@@ -158,7 +158,7 @@ class Main(object):
                         datetime.datetime.now(), steps, loss.item()
                     ))
                 if steps % self.args["save_interval"] == 0:
-                    paddle.save(self.model.state_dict(), f=self.args["save_path"])
+                    paddle.save(obj=self.model.state_dict(), path=self.args["save_path"])
                     print("current model checkpoint has been saved successfully in ModelStorage")
                 if steps >= self.args["max_steps"]:
                     break
