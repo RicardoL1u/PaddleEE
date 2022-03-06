@@ -300,3 +300,40 @@ class Main(object):
         recall_char = char_match_cnt / char_true_sum
         f1 = (2 * precision_char * recall_char) / (recall_char + precision_char)
         return (em + f1) / 2, em
+
+if __name__ == "__main__":
+    print("Hello RoBERTa Event Extraction.")
+    device = "gpu:0" 
+    args = {
+        "device": device,
+        "init_lr": 2e-5,
+        "batch_size": 12,
+        "weight_decay": 0.01,
+        "warm_up_steps": 1000,
+        "lr_decay_steps": 4000,
+        "max_steps": 5000,
+        "min_lr_rate": 1e-9,
+        "print_interval": 100,
+        "eval_interval": 500,
+        "max_len": 512,
+        "max_trigger_len": 6,
+        "save_path": "ModelStorage/dominant_trigger.pth",
+        "pre_train_dir": "bert-wwm-chinese",
+        "clip_norm": 0.25,
+        "dropout_rate": 0.1,
+        "alpha": 1.0,
+        "beta": 1.0,
+    }
+    paddle.set_device('gpu:0')
+    with open("DataSet/process.p", "rb") as f:
+        x = pickle.load(f)
+
+    tokenizer = BertTokenizer(vocab_file="bert-wwm-chinese")
+    train_dataset = MyDataset(data=x["train_dominant_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
+    valid_dataset = MyDataset(data=x["valid_dominant_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
+
+    train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
+    valid_loader = DataLoader(valid_dataset, batch_size=args["batch_size"], shuffle=False, num_workers=4)
+
+    m = Main(train_loader, valid_loader, args)
+    m.train()
