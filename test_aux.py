@@ -30,26 +30,30 @@ class TestAux(unittest.TestCase):
         tokenizer = BertTokenizer.from_pretrained('bert-wwm-chinese')
         model = BertModel.from_pretrained('bert-wwm-chinese')
 
-        inputs = tokenizer("欢迎使用百度飞桨")
-        inputs = {k:paddle.to_tensor([v]) for (k, v) in inputs.items()}
-        sequence_output, pooled_output = model(**inputs)
-        print(inputs)
-        print(len(inputs))
-        print()
-        print(sequence_output)
+        # inputs = tokenizer("欢迎使用百度飞桨")
+        # inputs = {k:paddle.to_tensor([v]) for (k, v) in inputs.items()}
+        # sequence_output, pooled_output = model(**inputs)
+        # print(inputs)
+        # print(len(inputs))
+        # print()
+        # print(sequence_output)
 
         train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=256)
         train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=4)
         for item in train_loader:
             input_ids, input_mask, input_seg, start_index, end_index = \
                     item["input_ids"], item["input_mask"], item["input_seg"], item["start_index"], item["end_index"]
-            print(input_ids)
-            print(input_mask)
-            print(input_seg)
+            # print(input_ids)
+            # print(input_mask)
+            # print(input_seg)
+            print(start_index)
             encoder_rep = model(input_ids=input_ids, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
             start_layer = paddle.nn.Linear(in_features=768,out_features=1)
             start_logits = paddle.squeeze(start_layer(encoder_rep))
-            print(start_logits)
+            start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
+            start_prob = start_prob_seq.gather(index=start_index.unsqueeze(axis=-1), axis=1) + 1e-6
+            print(start_prob)
+            # print(start_logits)
             # print(encoder_rep)
             break
 if __name__ == "__main__":

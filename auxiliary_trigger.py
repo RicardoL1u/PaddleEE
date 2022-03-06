@@ -79,8 +79,8 @@ class MyModel(paddle.nn.Layer):
             return start_prob_seq, end_prob_seq
         else:
             # indices select
-            start_prob = start_prob_seq.gather(index=start_index.unsqueeze(dim=-1), dim=1) + self.epsilon
-            end_prob = end_prob_seq.gather(index=end_index.unsqueeze(dim=-1), dim=1) + self.epsilon
+            start_prob = start_prob_seq.gather(index=start_index.unsqueeze(axis=-1), axis=1) + self.epsilon
+            end_prob = end_prob_seq.gather(index=end_index.unsqueeze(axis=-1), axis=1) + self.epsilon
             # TODO: this is multi classification CE?
             start_loss = -paddle.log(start_prob) 
             end_loss = -paddle.log(end_prob)
