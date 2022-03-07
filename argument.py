@@ -99,10 +99,10 @@ class MyModel(paddle.nn.Layer):
         if start_index is None or end_index is None or cls_label is None:
             return cls_logits, start_prob_seq, end_prob_seq
         else:
-            object_loss = self.object_cls_lfc(input=cls_logits, target=cls_label)
-            subject_loss = self.subject_cls_lfc(input=cls_logits, target=cls_label)
-            time_loss = self.time_cls_lfc(input=cls_logits, target=cls_label)
-            location_loss = self.location_cls_lfc(input=cls_logits,target=cls_label)
+            object_loss = self.object_cls_lfc(input=cls_logits, label=cls_label)
+            subject_loss = self.subject_cls_lfc(input=cls_logits, label=cls_label)
+            time_loss = self.time_cls_lfc(input=cls_logits, label=cls_label)
+            location_loss = self.location_cls_lfc(input=cls_logits,label=cls_label)
             cls_loss = object_loss * object_mask + subject_loss * subject_mask + time_loss * time_mask + location_loss * location_mask
             # indices select
             start_prob = (start_prob_seq.gather(index=start_index.unsqueeze(axis=-1), axis=1) + self.epsilon).squeeze(axis=-1)
