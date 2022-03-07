@@ -4,6 +4,7 @@ Event Extraction for PaddlePaddle translated from Pytorch
 
 ## Task Description
 the task we faced were proposed in event extraction challenge 2020 by iFLYTEK 科大讯飞
+
 the detail description of the event extraction task could be checked from [the open platform of iFLYTEK](http://challenge.xfyun.cn/topic/info?type=hotspot)
 
 ## environments
