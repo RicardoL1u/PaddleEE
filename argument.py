@@ -78,10 +78,10 @@ class MyModel(paddle.nn.Layer):
         self.cls_layer = paddle.nn.Linear(in_features=768, out_features=2)
         self.start_layer = paddle.nn.Linear(in_features=768, out_features=1)
         self.end_layer = paddle.nn.Linear(in_features=768, out_features=1)
-        self.object_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([1.0, 1.0]).float())
-        self.subject_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([10.0, 0.6]).float())
-        self.time_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([0.76, 1.45]).float())
-        self.location_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([0.6, 5.5]).float())
+        self.object_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.to_tensor([1.0, 1.0], dtype='float32'))
+        self.subject_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.to_tensor([10.0, 0.6], dtype='float32'))
+        self.time_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.to_tensor([0.76, 1.45], dtype='float32'))
+        self.location_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.to_tensor([0.6, 5.5], dtype='float32'))
         self.epsilon = 1e-6
 
     def forward(self, input_ids, input_mask, input_seg, cls_label=None, start_index=None, end_index=None,
