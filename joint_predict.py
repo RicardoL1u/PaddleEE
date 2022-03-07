@@ -17,6 +17,7 @@ import numpy as np
 import paddle
 import paddle.nn
 import pickle
+import util
 
 
 class DomTrigger(paddle.nn.Module):
@@ -38,18 +39,18 @@ class DomTrigger(paddle.nn.Module):
 
     def forward(self, input_ids, input_mask, input_seg, span_mask):
         bsz, seq_len = input_ids.shape[0], input_ids.shape[1]
-        encoder_rep = self.roberta_encoder(input_ids=input_ids, attention_mask=input_mask, token_type_ids=input_seg)[0]  # (bsz, seq, axis)
+        encoder_rep = self.roberta_encoder(input_ids=input_ids, token_type_ids=input_seg)[0]  # (bsz, seq, axis)
         encoder_rep = self.encoder_linear(encoder_rep)
         start_logits = self.start_layer(encoder_rep)  # (bsz, seq, 2)
         end_logits = self.end_layer(encoder_rep)  # (bsz, seq, 2)
         span1_logits = self.span1_layer(encoder_rep)  # (bsz, seq, 1)
         span2_logits = self.span2_layer(encoder_rep).squeeze(axis=-1)  # (bsz, seq)
         # 将两个span组合 => (bsz, seq, seq)
-        span_logits = span1_logits.repeat(1, 1, seq_len) + span2_logits[:, None, :].repeat(1, seq_len, 1)
+        span_logits = paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]) + paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1])
         start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=-1)  # (bsz, seq, 2)
         end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=-1)  # (bsz, seq, 2)
         # 使用span_mask
-        span_logits.masked_fill_(span_mask == 0, -1e30)
+        span_logits = util.masked_fill(span_logits, span_mask == 0, -1e30)
         span_prob = paddle.nn.functional.softmax(span_logits, axis=-1)  # (bsz, seq, seq)
         return start_prob_seq, end_prob_seq, span_prob
 
@@ -67,14 +68,14 @@ class AuxTrigger(paddle.nn.Module):
         self.epsilon = 1e-6
 
     def forward(self, input_ids, input_mask, input_seg):
-        encoder_rep = self.roberta_encoder(input_ids=input_ids, attention_mask=input_mask, token_type_ids=input_seg)[0]  # (bsz, seq, axis)
+        encoder_rep = self.roberta_encoder(input_ids=input_ids, token_type_ids=input_seg)[0]  # (bsz, seq, axis)
         encoder_rep = self.encoder_linear(encoder_rep)
         start_logits = self.start_layer(encoder_rep).squeeze(axis=-1)  # (bsz, seq)
         end_logits = self.end_layer(encoder_rep).squeeze(axis=-1)  # (bsz, seq)
         # adopt softmax function across length axisension with masking mechanism
         mask = input_mask == 0.0
-        start_logits.masked_fill_(mask, -1e30)
-        end_logits.masked_fill_(mask, -1e30)
+        start_logits = util.masked_fill(start_logits, mask, -1e30)
+        end_logits = util.masked_fill(end_logits, mask, -1e30)
         start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
         end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=1)
         return start_prob_seq, end_prob_seq
@@ -94,15 +95,16 @@ class Argument(paddle.nn.Module):
         self.epsilon = 1e-6
 
     def forward(self, input_ids, input_mask, input_seg):
-        encoder_rep, cls_rep = self.roberta_encoder(input_ids=input_ids, attention_mask=input_mask, token_type_ids=input_seg)[:2]  # (bsz, seq, axis)
+        encoder_rep, cls_rep = self.roberta_encoder(input_ids=input_ids, token_type_ids=input_seg)[:2]  # (bsz, seq, axis)
         encoder_rep = self.encoder_linear(encoder_rep)
         cls_logits = self.cls_layer(cls_rep)
         start_logits = self.start_layer(encoder_rep).squeeze(axis=-1)  # (bsz, seq)
         end_logits = self.end_layer(encoder_rep).squeeze(axis=-1)  # (bsz, seq)
         # adopt softmax function across length axisension with masking mechanism
         mask = input_mask == 0.0
-        start_logits.masked_fill_(mask, -1e30)
-        end_logits.masked_fill_(mask, -1e30)
+        start_logits = util.masked_fill(start_logits, mask, -1e30)
+        end_logits = util.masked_fill(end_logits, mask, -1e30)
         start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
         end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=1)
         return cls_logits, start_prob_seq, end_prob_seq
+
