@@ -2,8 +2,12 @@
 Event Extraction for PaddlePaddle translated from Pytorch
 > We do not produce codes, we are the translators on GitHub
 
+## Task Description
+the task we faced were proposed in event extraction challenge 2020 by iFLYTEK 科大讯飞
+the detail description of the event extraction task could be checked from [the open platform of iFLYTEK](http://challenge.xfyun.cn/topic/info?type=hotspot)
+
 ## environments
-this repo could be directly conducted on the notebook provide by ai studio
+this repo could be directly conducted on the notebook provided by [aistudio](https://aistudio.baidu.com/aistudio/usercenter)
 
 ## how to execute
 - step1: run preprocess.py
@@ -19,6 +23,7 @@ this repo could be directly conducted on the notebook provide by ai studio
 >参考论文: ACL2020 《A Unified MRC Framework for Named Entity Recognition》
 
 single model score: 0.78
+
 ## Pytorch Version
 stored in the folder 'pytorch'
 
