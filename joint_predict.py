@@ -322,9 +322,9 @@ if __name__ == "__main__":
                 loc_input = encode_obj.argument_enc(context=context, trigger=jtem["answer"], start=jtem["start"], end=jtem["end"], arg="location")
 
                 cls, s_seq, e_seq = argument_model.forward(
-                    input_ids=paddle.concat([i["input_ids"] for i in [obj_input, sub_input, tim_input, loc_input]], dim=0),
-                    input_seg=paddle.concat([i["input_seg"] for i in [obj_input, sub_input, tim_input, loc_input]], dim=0),
-                    input_mask=paddle.concat([i["input_mask"] for i in [obj_input, sub_input, tim_input, loc_input]], dim=0)
+                    input_ids=paddle.concat([i["input_ids"] for i in [obj_input, sub_input, tim_input, loc_input]], axis=0),
+                    input_seg=paddle.concat([i["input_seg"] for i in [obj_input, sub_input, tim_input, loc_input]], axis=0),
+                    input_mask=paddle.concat([i["input_mask"] for i in [obj_input, sub_input, tim_input, loc_input]], axis=0)
                 )
                 cls, s_seq, e_seq = cls.cpu().numpy(), s_seq.cpu().numpy(), e_seq.cpu().numpy()
                 obj_out = decode_obj.argument_dec(context=context, context_range=obj_input["context_range"],
