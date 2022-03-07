@@ -279,10 +279,10 @@ if __name__ == "__main__":
     dominant_trigger_model = DomTrigger(pre_train_dir=pre_train_dir)
     auxiliary_trigger_model = AuxTrigger(pre_train_dir=pre_train_dir)
     argument_model = Argument(pre_train_dir=pre_train_dir)
-
-    dominant_trigger_model = paddle.load("ModelStorage/dominant_trigger.pth")
-    auxiliary_trigger_model = paddle.load("ModelStorage/auxiliary_trigger.pth")
-    argument_model = paddle.load("ModelStorage/argument.pth")
+    
+    dominant_trigger_model.set_dict(paddle.load("ModelStorage/dominant_trigger.pth"))
+    auxiliary_trigger_model.set_dict(paddle.load("ModelStorage/auxiliary_trigger.pth"))
+    argument_model.set_dict(paddle.load("ModelStorage/argument.pth"))
     # dominant_trigger_model.load_state_dict(paddle.load("ModelStorage/dominant_trigger.pth", map_location=device), strict=False)
     # auxiliary_trigger_model.load_state_dict(paddle.load("ModelStorage/auxiliary_trigger.pth", map_location=device), strict=False)
     # argument_model.load_state_dict(paddle.load("ModelStorage/argument.pth", map_location=device), strict=False)
