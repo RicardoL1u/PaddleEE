@@ -20,7 +20,7 @@ import pickle
 import util
 
 
-class DomTrigger(paddle.nn.Module):
+class DomTrigger(paddle.nn.Layer):
     def __init__(self, pre_train_dir: str):
         """
         :param pre_train_dir: 预训练RoBERTa或者BERT文件夹
@@ -55,7 +55,7 @@ class DomTrigger(paddle.nn.Module):
         return start_prob_seq, end_prob_seq, span_prob
 
 
-class AuxTrigger(paddle.nn.Module):
+class AuxTrigger(paddle.nn.Layer):
     def __init__(self, pre_train_dir: str):
         super().__init__()
         self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
@@ -81,7 +81,7 @@ class AuxTrigger(paddle.nn.Module):
         return start_prob_seq, end_prob_seq
 
 
-class Argument(paddle.nn.Module):
+class Argument(paddle.nn.Layer):
     def __init__(self, pre_train_dir: str):
         super().__init__()
         self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
@@ -270,7 +270,7 @@ if __name__ == "__main__":
 
     pre_train_dir = "bert-wwm-chinese"
     tokenizer = BertTokenizer(vocab_file=pre_train_dir + "vocab.txt")
-    device = "cuda:%s" % sys.argv[1][-1]
+    device = 'gpu:0'
     max_len = 512
 
     encode_obj = InputEncoder(max_len=max_len, tokenizer=tokenizer, special_query_token_map=special_map)
@@ -280,23 +280,23 @@ if __name__ == "__main__":
     auxiliary_trigger_model = AuxTrigger(pre_train_dir=pre_train_dir)
     argument_model = Argument(pre_train_dir=pre_train_dir)
 
-    dominant_trigger_model.load_state_dict(torch.load("ModelStorage/dominant_trigger.pth", map_location=device), strict=False)
-    auxiliary_trigger_model.load_state_dict(torch.load("ModelStorage/auxiliary_trigger.pth", map_location=device), strict=False)
-    argument_model.load_state_dict(torch.load("ModelStorage/argument.pth", map_location=device), strict=False)
+    dominant_trigger_model = paddle.load("ModelStorage/dominant_trigger.pth")
+    auxiliary_trigger_model = paddle.load("ModelStorage/auxiliary_trigger.pth")
+    argument_model = paddle.load("ModelStorage/argument.pth")
+    # dominant_trigger_model.load_state_dict(paddle.load("ModelStorage/dominant_trigger.pth", map_location=device), strict=False)
+    # auxiliary_trigger_model.load_state_dict(paddle.load("ModelStorage/auxiliary_trigger.pth", map_location=device), strict=False)
+    # argument_model.load_state_dict(paddle.load("ModelStorage/argument.pth", map_location=device), strict=False)
 
     for i in [dominant_trigger_model, auxiliary_trigger_model, argument_model]:
         for p in i.parameters():
             p.requires_grad = False
 
-    dominant_trigger_model
-    auxiliary_trigger_model
-    argument_model
 
     dominant_trigger_model.eval()
     auxiliary_trigger_model.eval()
     argument_model.eval()
 
-    with torch.no_grad():
+    with paddle.no_grad():
         for item in test_items:
             id, context, n_triggers = item["id"], item["context"], item["n_triggers"]
             trigger_input = encode_obj.trigger_enc(context=context, is_dominant=True)
@@ -322,9 +322,9 @@ if __name__ == "__main__":
                 loc_input = encode_obj.argument_enc(context=context, trigger=jtem["answer"], start=jtem["start"], end=jtem["end"], arg="location")
 
                 cls, s_seq, e_seq = argument_model.forward(
-                    input_ids=torch.cat([i["input_ids"] for i in [obj_input, sub_input, tim_input, loc_input]], dim=0),
-                    input_seg=torch.cat([i["input_seg"] for i in [obj_input, sub_input, tim_input, loc_input]], dim=0),
-                    input_mask=torch.cat([i["input_mask"] for i in [obj_input, sub_input, tim_input, loc_input]], dim=0)
+                    input_ids=paddle.concat([i["input_ids"] for i in [obj_input, sub_input, tim_input, loc_input]], dim=0),
+                    input_seg=paddle.concat([i["input_seg"] for i in [obj_input, sub_input, tim_input, loc_input]], dim=0),
+                    input_mask=paddle.concat([i["input_mask"] for i in [obj_input, sub_input, tim_input, loc_input]], dim=0)
                 )
                 cls, s_seq, e_seq = cls.cpu().numpy(), s_seq.cpu().numpy(), e_seq.cpu().numpy()
                 obj_out = decode_obj.argument_dec(context=context, context_range=obj_input["context_range"],
