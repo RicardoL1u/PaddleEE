@@ -6,7 +6,7 @@ import paddle
 import paddle.nn
 import pickle
 
-# import torch
+# import paddle
 import util
 import datetime
 
@@ -64,3 +64,55 @@ class MyDataset(Dataset):
             "location_mask": 1.0 if _type == "location" else 0.0,
             "type": _type
         }
+
+
+class MyModel(paddle.nn.Layer):
+    def __init__(self, pre_train_dir: str, dropout_rate: float):
+        super().__init__()
+        self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
+        self.encoder_linear = paddle.nn.Sequential(
+            paddle.nn.Linear(in_features=768, out_features=768),
+            paddle.nn.Tanh(),
+            paddle.nn.Dropout(p=dropout_rate)
+        )
+        self.cls_layer = paddle.nn.Linear(in_features=768, out_features=2)
+        self.start_layer = paddle.nn.Linear(in_features=768, out_features=1)
+        self.end_layer = paddle.nn.Linear(in_features=768, out_features=1)
+        self.object_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([1.0, 1.0]).float().to(device))
+        self.subject_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([10.0, 0.6]).float().to(device))
+        self.time_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([0.76, 1.45]).float().to(device))
+        self.location_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([0.6, 5.5]).float().to(device))
+        self.epsilon = 1e-6
+
+    def forward(self, input_ids, input_mask, input_seg, cls_label=None, start_index=None, end_index=None,
+                object_mask=None, subject_mask=None, time_mask=None, location_mask=None):
+        encoder_rep, cls_rep = self.roberta_encoder(input_ids=input_ids, token_type_ids=input_seg)[:2]  # (bsz, seq, axis)
+        encoder_rep = self.encoder_linear(encoder_rep)
+        cls_logits = self.cls_layer(cls_rep)
+        start_logits = paddle.squeeze(self.start_layer(encoder_rep))  # (bsz, seq)
+        end_logits = paddle.squeeze(self.end_layer(encoder_rep))  # (bsz, seq)
+        # adopt softmax function across length dimension with masking mechanism
+        util.masked_fill(start_logits, input_mask == 0.0, -1e30)
+        util.masked_fill(end_logits, input_mask == 0.0, -1e30)
+        start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
+        end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=1)
+        if start_index is None or end_index is None or cls_label is None:
+            return cls_logits, start_prob_seq, end_prob_seq
+        else:
+            object_loss = self.object_cls_lfc(input=cls_logits, target=cls_label)
+            subject_loss = self.subject_cls_lfc(input=cls_logits, target=cls_label)
+            time_loss = self.time_cls_lfc(input=cls_logits, target=cls_label)
+            location_loss = self.location_cls_lfc(input=cls_logits,target=cls_label)
+            cls_loss = object_loss * object_mask + subject_loss * subject_mask + time_loss * time_mask + location_loss * location_mask
+            # indices select
+            start_prob = (start_prob_seq.gather(index=start_index.unsqueeze(axis=-1), axis=1) + self.epsilon).squeeze(axis=-1)
+            end_prob = (end_prob_seq.gather(index=end_index.unsqueeze(axis=-1), axis=1) + self.epsilon).squeeze(axis=-1)
+            start_loss = -paddle.log(start_prob)
+            end_loss = -paddle.log(end_prob)
+            span_loss = (start_loss + end_loss) / 2  # (bsz)
+            #  TODO: what dose this mean?
+            # (bsz)  => when sample label is 0, the span loss is not required.
+            span_loss = span_loss * cls_label
+            sum_loss = cls_loss + span_loss
+            avg_loss = paddle.mean(sum_loss)
+            return avg_loss

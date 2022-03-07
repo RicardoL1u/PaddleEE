@@ -22,10 +22,8 @@ class TestAux(unittest.TestCase):
     def test_roberta(self):
         with open("DataSet/process.p", "rb") as f:
             x = pickle.load(f)
-
-        # tokenizer = BertTokenizer(vocab_file="/home/ldmc/quanlin/Pretrained_NLP_Models/Pytorch/RoBERTa_Large_ZH/vocab.txt")
         # tokenizer = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
-        # roberta = RobertaModel.from_pretrained('roberta-wwm-ext')
+        # model = RobertaModel.from_pretrained('roberta-wwm-ext')
         
         tokenizer = BertTokenizer.from_pretrained('bert-wwm-chinese')
         model = BertModel.from_pretrained('bert-wwm-chinese')
