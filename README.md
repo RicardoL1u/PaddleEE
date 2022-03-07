@@ -1,6 +1,6 @@
 # PaddleEE
 Event Extraction for PaddlePaddle translated from Pytorch
-> We do not produce codes, we are the translator on GitHub
+> We do not produce codes, we are the translators on GitHub
 
 ## Pytorch Version
 stored in the folder 'pytorch'
