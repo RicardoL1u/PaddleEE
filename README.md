@@ -1,5 +1,11 @@
 # PaddleEE
-Event Extraction for PaddlePaddle
+Event Extraction for PaddlePaddle translated from Pytorch
+> We do not produce codes, we are the translator on GitHub
+
+## Pytorch Version
+stored in the folder 'pytorch'
+
+
 
 step1: run preprocess.py
 step2: {
