@@ -78,10 +78,10 @@ class MyModel(paddle.nn.Layer):
         self.cls_layer = paddle.nn.Linear(in_features=768, out_features=2)
         self.start_layer = paddle.nn.Linear(in_features=768, out_features=1)
         self.end_layer = paddle.nn.Linear(in_features=768, out_features=1)
-        self.object_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([1.0, 1.0]).float().to(device))
-        self.subject_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([10.0, 0.6]).float().to(device))
-        self.time_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([0.76, 1.45]).float().to(device))
-        self.location_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([0.6, 5.5]).float().to(device))
+        self.object_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([1.0, 1.0]).float())
+        self.subject_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([10.0, 0.6]).float())
+        self.time_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([0.76, 1.45]).float())
+        self.location_cls_lfc = paddle.nn.CrossEntropyLoss(reduction="none", weight=paddle.tensor([0.6, 5.5]).float())
         self.epsilon = 1e-6
 
     def forward(self, input_ids, input_mask, input_seg, cls_label=None, start_index=None, end_index=None,
@@ -138,3 +138,161 @@ class WarmUp_LinearDecay:
             rate = self.min_lr_rate
         self.optimizer.set_lr(rate)
         self.optimizer.step()
+
+
+class Main(object):
+    def __init__(self, train_loader, valid_loader, args):
+        self.args = args
+        self.train_loader = train_loader
+        self.valid_loader = valid_loader
+        self.model = MyModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"])
+
+        param_optimizer = list(self.model.named_parameters())
+        no_decay = ['bias', 'gamma', 'beta']
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+             'weight_decay_rate': args["weight_decay"]},
+            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+             'weight_decay_rate': 0.0}
+        ]
+
+        self.optimizer = optimizer.AdamW(parameters=optimizer_grouped_parameters, learning_rate=args["init_lr"])
+        self.schedule = WarmUp_LinearDecay(optimizer=self.optimizer, init_rate=args["init_lr"],
+                                           warm_up_steps=args["warm_up_steps"],
+                                           decay_steps=args["lr_decay_steps"], min_lr_rate=args["min_lr_rate"])
+        self.model.to(device=device)
+
+    def train(self):
+        best_f = 0.0
+        self.model.train()
+        steps = 0
+        while True:
+            for item in self.train_loader:
+                input_ids, input_mask, input_seg, cls_label, start_index, end_index, obj_mask, sub_mask, tim_mask, loc_mask = \
+                    item["input_ids"], item["input_mask"], item["input_seg"], item["cls"], item["start_index"], item["end_index"], \
+                    item["object_mask"], item["subject_mask"], item["time_mask"], item["location_mask"]
+                self.optimizer.clear_gradients()
+                loss = self.model(
+                    input_ids=input_ids, input_mask=input_mask, input_seg=input_seg,
+                    start_index=start_index, end_index=end_index, cls_label=cls_label,
+                    object_mask=obj_mask, subject_mask=sub_mask, time_mask=tim_mask,
+                    location_mask=loc_mask
+                )
+                loss.backward()
+                paddle.nn.ClipGradByGlobalNorm(group_name=self.model.parameters(), clip_norm=self.args["clip_norm"])
+                self.schedule.step()
+                steps += 1
+                if steps % self.args["print_interval"] == 0:
+                    print("{} || [{}] || loss {:.3f}".format(
+                        datetime.datetime.now(), steps, loss.item()
+                    ))
+                if steps % self.args["eval_interval"] == 0:
+                    f, em = self.eval()
+                    print("-*- eval F %.3f || EM %.3f -*-" % (f, em))
+                    if f > best_f:
+                        best_f = f
+                        paddle.save(self.model.state_dict(), path=self.args["save_path"])
+                        print("current best model checkpoint has been saved successfully in ModelStorage")
+                if steps >= self.args["max_steps"]:
+                    break
+            if steps >= self.args["max_steps"]:
+                break
+
+    def eval(self):
+        self.model.eval()
+        y_pred, y_true = [], []
+        with paddle.no_grad():
+            for item in self.valid_loader:
+                input_ids, input_mask, input_seg, label, context, context_range, arg_type = \
+                    item["input_ids"], item["input_mask"], item["input_seg"], item["label"], item["context"], \
+                    item["context_range"], item["type"]
+                y_true.extend(label)
+                cls, s_seq, e_seq = self.model(
+                    input_ids=input_ids,
+                    input_mask=input_mask,
+                    input_seg=input_seg
+                )
+                cls = cls.cpu().numpy()
+                s_seq = s_seq.cpu().numpy()
+                e_seq = e_seq.cpu().numpy()
+                for i in range(len(s_seq)):
+                    y_pred.append(self.dynamic_search(cls[i], s_seq[i], e_seq[i], context[i], context_range[i], arg_type[i]))
+        self.model.train()
+        return self.calculate_f1(y_pred=y_pred, y_true=y_true)
+
+    def dynamic_search(self, cls, s_seq, e_seq, context, context_range, arg_type):
+        if cls[1] > cls[0]:
+            max_score = 0.0
+            dic = {"start": -1, "end": -1}
+            t = context_range.split("-")
+            start, end = int(t[0]), int(t[1])
+            for i in range(start, end):
+                for j in range(i, i + self.args["max_%s_len" % arg_type] if i + self.args["max_%s_len" % arg_type] <= end else end):
+                    if s_seq[i] + e_seq[j] > max_score:
+                        max_score = s_seq[i] + e_seq[j]
+                        dic["start"], dic["end"] = i, j
+            return context[dic["start"]-start:dic["end"]-start + 1]
+        else:
+            return ""
+
+    @staticmethod
+    def calculate_f1(y_pred, y_true):
+        """
+        :param y_pred: [n_samples]
+        :param y_true: [n_samples]
+        :return: 严格F1(exact match)和松弛F1(字符匹配率)
+        """
+        exact_match_cnt = 0
+        char_match_cnt = 0
+        char_pred_sum = char_true_sum = 1
+        for i in range(len(y_true)):
+            if y_pred[i] == y_true[i]:
+                exact_match_cnt += 1
+            char_pred_sum += len(y_pred[i])
+            char_true_sum += len(y_true[i])
+            for j in y_pred[i]:
+                if j in y_true[i]:
+                    char_match_cnt += 1
+        em = exact_match_cnt / len(y_true)
+        precision_char = char_match_cnt / char_pred_sum
+        recall_char = char_match_cnt / char_true_sum
+        f1 = (2 * precision_char * recall_char) / (recall_char + precision_char)
+        return (em + f1) / 2, em
+
+
+if __name__ == "__main__":
+    print("Hello RoBERTa Event Extraction.")
+    device = "gpu:0"
+    args = {
+        "init_lr": 2e-5,
+        "batch_size": 12,
+        "weight_decay": 0.01,
+        "warm_up_steps": 2500,
+        "lr_decay_steps": 6500,
+        "max_steps": 12000,
+        "min_lr_rate": 1e-9,
+        "print_interval": 100,
+        "eval_interval": 1000,
+        "max_len": 512,
+        "max_object_len": 25,  # 平均长度 7.22, 最大长度93
+        "max_subject_len": 25,  # 平均长度10.0, 最大长度138
+        "max_time_len": 20,  # 平均长度6.03, 最大长度22
+        "max_location_len": 25,  # 平均长度3.79,最大长度41
+        "save_path": "ModelStorage/argument.pth",
+        "pre_train_dir": "bert-wwm-chinese",
+        "clip_norm": 0.25,
+        "dropout_rate": 0.1
+    }
+
+    with open("DataSet/process.p", "rb") as f:
+        x = pickle.load(f)
+
+    tokenizer = BertTokenizer.from_pretrained("bert-wwm-chinese")
+    train_dataset = MyDataset(data=x["train_argument_items"], tokenizer=tokenizer, max_len=args["max_len"], special_query_token_map=x["argument_query_special_map_token"])
+    valid_dataset = MyDataset(data=x["valid_argument_items"], tokenizer=tokenizer, max_len=args["max_len"], special_query_token_map=x["argument_query_special_map_token"])
+
+    train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
+    valid_loader = DataLoader(valid_dataset, batch_size=args["batch_size"], shuffle=False, num_workers=4)
+
+    m = Main(train_loader, valid_loader, args)
+    m.train()
