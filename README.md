@@ -3,7 +3,7 @@ Event Extraction for PaddlePaddle translated from Pytorch
 > We do not produce codes, we are the translators on GitHub
 
 ## Task Description
-the task we faced were proposed in event extraction challenge 2020 by iFLYTEK 科大讯飞
+the task we faced was proposed in event extraction challenge 2020 by iFLYTEK 科大讯飞
 
 the detail description of the event extraction task could be checked from [the open platform of iFLYTEK](http://challenge.xfyun.cn/topic/info?type=hotspot)
 
