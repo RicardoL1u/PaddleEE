@@ -269,7 +269,7 @@ if __name__ == "__main__":
     writer.writerow(["id", "trigger", "object", "subject", "time", "location"])
 
     pre_train_dir = "bert-wwm-chinese"
-    tokenizer = BertTokenizer(vocab_file=pre_train_dir + "vocab.txt")
+    tokenizer = BertTokenizer.from_pretrained(pre_train_dir)
     device = 'gpu:0'
     max_len = 512
 
