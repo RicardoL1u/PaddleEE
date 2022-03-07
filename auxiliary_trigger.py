@@ -70,8 +70,8 @@ class MyModel(paddle.nn.Layer):
         end_logits = paddle.squeeze(self.end_layer(encoder_rep))  # (bsz, seq)
         # adopt softmax function across length dimension with masking mechanism
         mask = input_mask == 0.0
-        util.masked_fill(start_logits, mask, -1e30)
-        util.masked_fill(end_logits, mask, -1e30)
+        start_logits = util.masked_fill(start_logits, mask, -1e30)
+        end_logits = util.masked_fill(end_logits, mask, -1e30)
         start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
         end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=1)
         if start_index is None or end_index is None:

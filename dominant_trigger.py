@@ -114,12 +114,12 @@ class MyModel(paddle.nn.Layer):
         span_logits = paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]) + paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1])
 
         # adopt softmax function across length dimension with masking mechanism
-        # util.masked_fill(start_logits, input_mask == 0.0, -1e30)
-        # util.masked_fill(end_logits, input_mask == 0.0, -1e30)
+        # start_logits = util.masked_fill(start_logits, input_mask == 0.0, -1e30)
+        # end_logits = util.masked_fill(end_logits, input_mask == 0.0, -1e30)
         start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
         end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=1)
         
-        util.masked_fill(span_logits,span_mask==0,-1e30)
+        span_logits = util.masked_fill(span_logits,span_mask==0,-1e30)
         span_prob = paddle.nn.functional.softmax(span_logits,axis=-1) # (bsz,seq,seq)
         
         # if there is no answers, returen the predict results
