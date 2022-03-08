@@ -1,11 +1,11 @@
 # PaddleEE
-Event Extraction for PaddlePaddle translated from Pytorch
+Event Extraction Pipeline for PaddlePaddle translated from Pytorch
 > We do not produce codes, we are the translators on GitHub
 
 ## Task Description
 the task we faced was proposed in event extraction challenge 2020 by iFLYTEK 科大讯飞
 
-the detail description of the event extraction task could be checked from [the open platform of iFLYTEK](http://challenge.xfyun.cn/topic/info?type=hotspot)
+the detailed description of the event extraction task could be checked from [the open platform of iFLYTEK](http://challenge.xfyun.cn/topic/info?type=hotspot)
 
 ## environments
 this repo could be directly conducted on the notebook provided by [aistudio](https://aistudio.baidu.com/aistudio/usercenter)
