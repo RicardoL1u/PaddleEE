@@ -139,6 +139,9 @@ class InputEncoder(object):
             input_ids += [self.ID_PAD] * extra
             input_mask += [0.0] * extra
             input_seg += [self.SEG_P] * extra
+
+        # span_mask stores the trigger matrix which shows the maximum following
+        # word by given one word
         span_mask = None
         if is_dominant:
             span_mask = np.zeros(shape=(self.max_len, self.max_len), dtype=np.float32)
