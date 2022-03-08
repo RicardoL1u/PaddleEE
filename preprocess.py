@@ -1,9 +1,9 @@
 #!usr/bin/env python
 # -*- coding:utf-8 -*-
 """
-    @Time: 2020-07-23
-    @Author: menghuanlater
-    @Software: Pycharm 2019.2
+    @Time: 2022-03-08
+    @Author: Yantao Liu
+    @Software: VSC
     @Usage: 
 -----------------------------
     Description: 数据预处理
@@ -191,17 +191,17 @@ for key in all_triggers.keys():
             "query": all_triggers[key]["query"],
             "answer": item
         })
-# for i in range(3):
-#     shuffle(dominant_items)
-#     shuffle(aux_items)
-#     shuffle(object_arguments["exist"])
-#     shuffle(object_arguments["not_exist"])
-#     shuffle(subject_arguments["exist"])
-#     shuffle(subject_arguments["not_exist"])
-#     shuffle(time_arguments["exist"])
-#     shuffle(time_arguments["not_exist"])
-#     shuffle(location_arguments["exist"])
-#     shuffle(location_arguments["not_exist"])
+for i in range(3):
+    shuffle(dominant_items)
+    shuffle(aux_items)
+    shuffle(object_arguments["exist"])
+    shuffle(object_arguments["not_exist"])
+    shuffle(subject_arguments["exist"])
+    shuffle(subject_arguments["not_exist"])
+    shuffle(time_arguments["exist"])
+    shuffle(time_arguments["not_exist"])
+    shuffle(location_arguments["exist"])
+    shuffle(location_arguments["not_exist"])
 output["train_dominant_trigger_items"] = dominant_items[valid_dominant_trigger_number:]
 output["valid_dominant_trigger_items"] = dominant_items[:valid_dominant_trigger_number]
 output["train_aux_trigger_items"] = aux_items
@@ -243,9 +243,6 @@ for item in test_reader:
         {"id": item[0], "context": item[1], "n_triggers": tmp[item[0]]}
     )
 
-print(dominant_items[1])
-print()
-print(aux_items[1])
-print(aux_items[2])
+
 # with open("DataSet/test.p", "wb") as f:
 #     pickle.dump(output, f)
