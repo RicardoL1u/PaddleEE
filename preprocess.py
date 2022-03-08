@@ -231,6 +231,7 @@ output["valid_argument_items"].extend(location_arguments["exist"][:x] + location
 for i in range(10):
     shuffle(output["train_argument_items"])
 
+# TODO: somehow the sample.csv stores the number of triggers in each sentence
 tmp = dict()
 for item in sample_reader:
     if item[0] not in tmp.keys():
@@ -239,6 +240,7 @@ for item in sample_reader:
         tmp[item[0]] += 1
 
 for item in test_reader:
+    # n_trigger is the number of triggers in the given sentences
     output["test_items"].append(
         {"id": item[0], "context": item[1], "n_triggers": tmp[item[0]]}
     )
