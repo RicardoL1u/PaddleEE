@@ -7,6 +7,16 @@ import paddle
 import paddle.nn
 import sys
 class TestAux(unittest.TestCase):
+    def __init__(self, methodName: str = ...) -> None:
+        super().__init__(methodName)
+        with open("DataSet/process.p", "rb") as f:
+            self.x = pickle.load(f)
+        # tokenizer = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
+        # model = RobertaModel.from_pretrained('roberta-wwm-ext')
+        
+        self.tokenizer = BertTokenizer.from_pretrained('bert-wwm-chinese')
+        self.model = BertModel.from_pretrained('bert-wwm-chinese')
+
     # def test_dataloader(self):
     #     with open("DataSet/process.p", "rb") as f:
     #         x = pickle.load(f)
@@ -19,24 +29,15 @@ class TestAux(unittest.TestCase):
     #     tokens = tokenizer("这是一次测试，我不知道测试结果会咋样")
     #     print(tokens)
     #     print(len(train_loader))
-    def test_roberta(self):
-        with open("DataSet/process.p", "rb") as f:
-            x = pickle.load(f)
-        # tokenizer = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
-        # model = RobertaModel.from_pretrained('roberta-wwm-ext')
-        
-        tokenizer = BertTokenizer.from_pretrained('bert-wwm-chinese')
-        model = BertModel.from_pretrained('bert-wwm-chinese')
+    def test_bert(self):
+        inputs = self.tokenizer("欢迎使用百度飞桨")
+        inputs = {k:paddle.to_tensor([v]) for (k, v) in inputs.items()}
+        sequence_output, pooled_output = self.model(**inputs)[:2]
+        print(sequence_output.shape)
+        print(pooled_output.shape)
 
-        # inputs = tokenizer("欢迎使用百度飞桨")
-        # inputs = {k:paddle.to_tensor([v]) for (k, v) in inputs.items()}
-        # sequence_output, pooled_output = model(**inputs)
-        # print(inputs)
-        # print(len(inputs))
-        # print()
-        # print(sequence_output)
-
-        train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=256)
+    def test_dataset(self):
+        train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=self.tokenizer, max_len=256)
         train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=4)
         for item in train_loader:
             input_ids, input_mask, input_seg, start_index, end_index = \
@@ -45,7 +46,7 @@ class TestAux(unittest.TestCase):
             # print(input_mask)
             # print(input_seg)
             print(start_index)
-            encoder_rep = model(input_ids=input_ids, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
+            encoder_rep = self.model(input_ids=input_ids, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
             start_layer = paddle.nn.Linear(in_features=768,out_features=1)
             start_logits = paddle.squeeze(start_layer(encoder_rep))
             start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)

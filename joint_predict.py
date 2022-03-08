@@ -51,6 +51,7 @@ class DomTrigger(paddle.nn.Layer):
         end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=-1)  # (bsz, seq, 2)
         # 使用span_mask
         span_logits = util.masked_fill(span_logits, span_mask == 0, -1e30)
+        # TODO one bug here
         span_prob = paddle.nn.functional.softmax(span_logits, axis=1)  # (bsz, seq, seq)
         return start_prob_seq, end_prob_seq, span_prob
 
@@ -204,12 +205,14 @@ class OutputDecoder(object):
         # 然后遍历i_end
         cur_end = -1
         for e in i_end:
+            # 对于每个E, 找到所有在之前的S
             s = []
             for i in i_start:
                 if e >= i >= cur_end and (e - i) <= args["max_trigger_len"]:
                     s.append(i)
             max_s = 0.0
             t = None
+            # 找出其中能使得发生概率最大的 S
             for i in s:
                 if p_seq[i, e] > max_s:
                     t = (i, e)
@@ -217,12 +220,16 @@ class OutputDecoder(object):
             cur_end = e
             if t is not None:
                 ans_index.append(t)
+        
         out = []
         for item in ans_index:
             out.append({
-                "answer": context[item[0] - c_start:item[1] - c_start + 1], "start": item[0] - c_start, "end": item[1] - c_start + 1,
+                "answer": context[item[0] - c_start:item[1] - c_start + 1], 
+                "start": item[0] - c_start, 
+                "end": item[1] - c_start + 1,
                 "score": ((s_seq[item[0]][1] + e_seq[item[1]][1]) / 2) * p_seq[item[0], item[1]]
             })
+        # 按得分从高到底抽取前 N 个返回
         out.sort(key=lambda x: x["score"], reverse=True)
         return out[:n_triggers]
 
@@ -241,6 +248,7 @@ class OutputDecoder(object):
 
     @staticmethod
     def argument_dec(context, cls, s_seq, e_seq, context_range, arg_type):
+        # 看bert encoder之后cls的rep来确定是否存在该argument
         if cls[1] > cls[0]:
             max_score = 0.0
             dic = {"start": -1, "end": -1}
@@ -310,6 +318,7 @@ if __name__ == "__main__":
             trigger_out = decode_obj.dominant_dec(context=context, s_seq=s_seq.cpu().numpy()[0], e_seq=e_seq.cpu().numpy()[0],
                                                   p_seq=p_seq.cpu().numpy()[0], context_range=trigger_input["context_range"],
                                                   n_triggers=n_triggers)
+            # 假如domaint model没有抽取足量
             if len(trigger_out) < n_triggers:
                 print("---%s号测试文本调用辅助触发词抽取模型---" % id)
                 s_seq, e_seq = auxiliary_trigger_model.forward(
@@ -325,6 +334,7 @@ if __name__ == "__main__":
                 loc_input = encode_obj.argument_enc(context=context, trigger=jtem["answer"], start=jtem["start"], end=jtem["end"], arg="location")
 
                 cls, s_seq, e_seq = argument_model.forward(
+                    # 简单做了一个bsz=4 的 batch
                     input_ids=paddle.concat([i["input_ids"] for i in [obj_input, sub_input, tim_input, loc_input]], axis=0),
                     input_seg=paddle.concat([i["input_seg"] for i in [obj_input, sub_input, tim_input, loc_input]], axis=0),
                     input_mask=paddle.concat([i["input_mask"] for i in [obj_input, sub_input, tim_input, loc_input]], axis=0)

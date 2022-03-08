@@ -56,5 +56,6 @@ class TestJoint(unittest.TestCase):
         x = paddle.randn([1,4,4])
         print(x)
         print(paddle.nn.functional.softmax(x,axis=1))
+
 if __name__ == "__main__":
     unittest.main()
