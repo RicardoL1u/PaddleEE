@@ -2,6 +2,7 @@ import unittest
 import  pickle
 import csv
 import jieba
+import joint_predict
 
 class TestPreprocess(unittest.TestCase):
     def __init__(self, methodName: str = ...) -> None:
@@ -36,6 +37,7 @@ class TestPreprocess(unittest.TestCase):
     
     def test_testcases(self):
         test_items, special_map = self.x["test_items"], self.x["argument_query_special_map_token"]
+        # print(special_map)
         cnt = 0
         for item in test_items:
             print(item)
