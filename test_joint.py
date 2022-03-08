@@ -32,18 +32,29 @@ class TestJoint(unittest.TestCase):
             print(trigger_input['span_mask'][0][10][11:70]) ## all zero
             break
     
+    # TODO: one bug here!
     def test_span(self):
         seq_len = 4
         span1_logits = paddle.randn([1,seq_len,1])
         span2_logits = paddle.randn([1,seq_len])
         span_logits = paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]) + paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1])
-        print(span1_logits)
-        print(paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]))
-        print(span2_logits)
-        print(paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1]))
+        # print(span1_logits)
+        # print(paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]))
+        # print(span2_logits)
+        # print(paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1]))
         print(span_logits)
-        print(paddle.nn.functional.softmax(span_logits, axis=1))  # (bsz, seq, seq)
-        print(torch.nn.functional.softmax(paddle2torch(span_logits), dim=1))  # (bsz, seq, seq)
+        span_prob = paddle.nn.functional.softmax(span_logits, axis=1)
+        print(span_prob)
+        unit = span_logits[0,:,2]
+        print(unit)
+        print(paddle.nn.functional.softmax(unit))
+        # print()  # (bsz, seq, seq)
+        # print(torch.nn.functional.softmax(paddle2torch(span_logits), dim=1))  # (bsz, seq, seq)
+        # print(torch.softmax(paddle2torch(span_logits),dim=1))
 
+    def test_softmax(self):
+        x = paddle.randn([1,4,4])
+        print(x)
+        print(paddle.nn.functional.softmax(x,axis=1))
 if __name__ == "__main__":
     unittest.main()
