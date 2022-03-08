@@ -120,7 +120,7 @@ class MyModel(paddle.nn.Layer):
         end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=1)
         
         span_logits = util.masked_fill(span_logits,span_mask==0,-1e30)
-        span_prob = paddle.nn.functional.softmax(span_logits,axis=-1) # (bsz,seq,seq)
+        span_prob = paddle.nn.functional.softmax(span_logits,axis=1) # (bsz,seq,seq)
         
         # if there is no answers, returen the predict results
         if start_seq_label is None or end_seq_label is None or span_label is None or seq_mask is None:

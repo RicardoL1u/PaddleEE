@@ -3,6 +3,10 @@ import pickle
 import joint_predict
 from paddlenlp.transformers import BertTokenizer,BertModel
 import paddle
+import paddle.nn
+import torch.nn.functional
+
+from util import paddle2torch
 
 class TestJoint(unittest.TestCase):
     def __init__(self, methodName: str = ...) -> None:
@@ -25,9 +29,21 @@ class TestJoint(unittest.TestCase):
             print(len(trigger_input['span_mask']))
             # print(trigger_input['span_mask'][0][:][11:70])
             print(trigger_input['span_mask'][0][11][11:70])
-            print(trigger_input['span_mask'][0][10][11:70])
+            print(trigger_input['span_mask'][0][10][11:70]) ## all zero
             break
-
+    
+    def test_span(self):
+        seq_len = 4
+        span1_logits = paddle.randn([1,seq_len,1])
+        span2_logits = paddle.randn([1,seq_len])
+        span_logits = paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]) + paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1])
+        print(span1_logits)
+        print(paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]))
+        print(span2_logits)
+        print(paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1]))
+        print(span_logits)
+        print(paddle.nn.functional.softmax(span_logits, axis=1))  # (bsz, seq, seq)
+        print(torch.nn.functional.softmax(paddle2torch(span_logits), dim=1))  # (bsz, seq, seq)
 
 if __name__ == "__main__":
     unittest.main()
