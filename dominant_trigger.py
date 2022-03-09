@@ -61,6 +61,7 @@ class MyDataset(Dataset):
             triggers.append(item["trigger"])
             start_seq_label[context_start + item["start"]] = 1
             end_seq_label[context_start + item["end"]] = 1
+            # span_label 借助于数组下标来标明一个 answer的 开始与结束
             span_label[context_start + item["start"], context_start + item["end"]] = 1
         for i in range(context_start, context_end):
             for j in range(i, context_end):
@@ -107,16 +108,16 @@ class MyModel(paddle.nn.Layer):
         encoder_rep = self.roberta_encoder(input_ids=input_ids,  token_type_ids=input_seg)[0]  # (bsz, seq, dim)
         encoder_rep = self.encoder_linear(encoder_rep)
         
-        start_logits = paddle.squeeze(self.start_layer(encoder_rep)) # (bsz, seq)
-        end_logits = paddle.squeeze(self.end_layer(encoder_rep))  # (bsz, seq)
+        # 对于每一个token都做一个二分类
+        # 判断其是否是trigger的start or end index
+        start_logits = paddle.squeeze(self.start_layer(encoder_rep)) # (bsz, seq, 2)
+        end_logits = paddle.squeeze(self.end_layer(encoder_rep))  # (bsz, seq, 2)
         span1_logits = self.span1_layer(encoder_rep)  # (bsz, seq, 1)
         span2_logits = paddle.squeeze(self.span2_layer(encoder_rep))  # (bsz, seq)
         span_logits = paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]) + paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1])
 
         # adopt softmax function across length dimension with masking mechanism
-        # start_logits = util.masked_fill(start_logits, input_mask == 0.0, -1e30)
-        # end_logits = util.masked_fill(end_logits, input_mask == 0.0, -1e30)
-        start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
+        start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1) # (bsz,seq,2)
         end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=1)
         
         span_logits = util.masked_fill(span_logits,span_mask==0,-1e30)
@@ -127,9 +128,12 @@ class MyModel(paddle.nn.Layer):
             return start_prob_seq, end_prob_seq, span_prob
         else:
             # 计算start和end的loss
+            # 这里的 input.shape = [bsz*seq,2] label.shape = [bsz*seq]
+            # 相当于把一个 batch的中的所有loss并到一起来算
             start_loss = self.selfc(input=paddle.reshape(start_logits,[-1, 2]), label=paddle.reshape(start_seq_label,[-1,]))
             end_loss = self.selfc(input=paddle.reshape(end_logits,[-1, 2]), label=paddle.reshape(end_seq_label,[-1,]))
             sum_loss = start_loss + end_loss
+            # 只考虑在context中的loss query中的loss去除
             sum_loss *= paddle.reshape(seq_mask,[-1,])
             avg_se_loss = self.alpha * paddle.sum(sum_loss) / (paddle.nonzero(seq_mask, as_tuple=False).shape[0])
 
