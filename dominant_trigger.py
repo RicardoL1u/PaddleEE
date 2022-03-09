@@ -121,6 +121,7 @@ class MyModel(paddle.nn.Layer):
         start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=-1) # (bsz,seq,2)
         end_prob_seq = paddle.nn.functional.softmax(end_logits, axis=-1)
         
+        # -1e30 是为了给在 span_mask 之外的猜测一个极小的 概率 （再通过softmax之后）
         span_logits = util.masked_fill(span_logits,span_mask==0,-1e30)
         span_prob = paddle.nn.functional.softmax(span_logits,axis=1) # (bsz,seq,seq)
         

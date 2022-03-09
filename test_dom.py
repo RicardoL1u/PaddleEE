@@ -7,8 +7,8 @@ from paddle.io import DataLoader
 class TestDom(unittest.TestCase):
     def __init__(self, methodName: str = ...) -> None:
         super().__init__(methodName)
-        self.max_len = 128
-        self.bsz = 4
+        self.max_len = 64
+        self.bsz = 2
         with open("DataSet/process.p", "rb") as f:
             self.x = pickle.load(f)
         self.tokenizer = BertTokenizer.from_pretrained("bert-wwm-chinese")
