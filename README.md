@@ -18,7 +18,8 @@ this repo could be directly conducted on the notebook provided by [aistudio](htt
     - run argument.py;
 - step3: run joint_predict.py
 
-核心思路: 以Bert作为Context Encoder, 将问题拆解为触发词识别和触发词对应四论元检测
+核心思路: 以Bert作为Context Encoder, 将问题拆解为触发词识别和触发词对应的四论元检测
+
 触发词识别和论元识别基于MRC(Span Extraction类机器阅读理解)思路实现
 
 >参考论文: ACL2020 《A Unified MRC Framework for Named Entity Recognition》
