@@ -265,7 +265,7 @@ if __name__ == "__main__":
     device = "gpu:0"
     args = {
         "init_lr": 2e-5,
-        "batch_size": 32,
+        "batch_size": 48,
         "weight_decay": 0.01,
         "warm_up_steps": 2500,
         "lr_decay_steps": 6500,
