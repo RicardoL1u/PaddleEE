@@ -123,7 +123,7 @@ class MyModel(paddle.nn.Layer):
         
         # -1e30 是为了给在 span_mask 之外的猜测一个极小的 概率 （再通过softmax之后）
         span_logits = util.masked_fill(span_logits,span_mask==0,-1e30)
-        span_prob = paddle.nn.functional.softmax(span_logits,axis=1) # (bsz,seq,seq)
+        span_prob = paddle.nn.functional.softmax(span_logits.reshape([bsz,-1]), axis=1).reshape([bsz,seq_len,-1]) # (bsz,seq,seq)
         
         # if there is no answers, returen the predict results
         if start_seq_label is None or end_seq_label is None or span_label is None or seq_mask is None:

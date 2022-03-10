@@ -52,7 +52,7 @@ class DomTrigger(paddle.nn.Layer):
         # 使用span_mask
         span_logits = util.masked_fill(span_logits, span_mask == 0, -1e30)
         # TODO one bug here
-        span_prob = paddle.nn.functional.softmax(span_logits, axis=1)  # (bsz, seq, seq)
+        span_prob = paddle.nn.functional.softmax(span_logits.reshape([bsz,-1]), axis=1).reshape([bsz,seq_len,-1]) # (bsz,seq,seq)
         return start_prob_seq, end_prob_seq, span_prob
 
 
