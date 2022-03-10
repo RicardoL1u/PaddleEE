@@ -20,6 +20,22 @@ class TestDom(unittest.TestCase):
             print(item)
             break
         print("hi")
+    
+    def test_validset(self):
+        valid_dataset =  dominant_trigger.MyDataset(data=self.x["valid_dominant_trigger_items"], tokenizer=self.tokenizer, max_len=128)
+        # valid_loader = DataLoader(valid_dataset, batch_size=4, shuffle=True, num_workers=4)
+        # cnt = 0
+        for item in valid_dataset:
+            # cnt += 1
+            if "&" in item["triggers"]:
+                print(item)
+                break
+    
+    def test_join(self):
+        x = ["mike","jack"]
+        x = "".join(x)
+        for k in x:
+            print(k)
 
 if __name__ == "__main__":
     unittest.main()        

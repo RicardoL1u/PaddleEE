@@ -288,10 +288,13 @@ class Main(object):
         for i in range(len(y_true)):
             x = y_pred[i]
             y = y_true[i].split("&")
+            # 这里则是全词级别的匹配
             exact_sum_cnt += len(y)
             for k in x:
                 if k in y:
                     exact_match_cnt += 1
+            
+            # 这里是单字匹配，也就是char级别的
             x = "".join(x)
             y = "".join(y)
             char_pred_sum += len(x)

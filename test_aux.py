@@ -36,7 +36,7 @@ class TestAux(unittest.TestCase):
         print(sequence_output.shape)
         print(pooled_output.shape)
 
-    def test_dataset(self):
+    def test_trainset(self):
         train_dataset = MyDataset(data=self.x["train_aux_trigger_items"], tokenizer=self.tokenizer, max_len=256)
         train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=4)
         for item in train_loader:
