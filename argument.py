@@ -264,7 +264,7 @@ if __name__ == "__main__":
     print("Hello RoBERTa Event Extraction.")
     device = "gpu:0"
     args = {
-        "init_lr": 2e-5,
+        "init_lr": 2e-4,
         "batch_size": 32,
         "weight_decay": 0.01,
         "warm_up_steps": 2500,
