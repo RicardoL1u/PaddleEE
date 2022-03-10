@@ -42,8 +42,10 @@ class TestJoint(unittest.TestCase):
         # print(paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]))
         # print(span2_logits)
         # print(paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1]))
-        print(span_logits)
-        span_prob = paddle.nn.functional.softmax(span_logits, axis=1)
+        print(span_logits.reshape([1,-1]))
+        span_prob = paddle.nn.functional.softmax(span_logits.reshape([1,-1]), axis=1).reshape([1,seq_len,-1])
+        print(span_prob)
+        span_prob = paddle.nn.functional.softmax(span_prob,axis=1)
         print(span_prob)
         unit = span_logits[0,:,2]
         print(unit)

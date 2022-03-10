@@ -46,7 +46,7 @@ class TestAux(unittest.TestCase):
             # print(input_mask)
             # print(input_seg)
             print(start_index)
-            encoder_rep = self.model(input_ids=input_ids, token_type_ids=input_seg)[0]  # (bsz, seq, dim)
+            encoder_rep = self.model(input_ids=input_ids, attention_mask=input_mask,token_type_ids=input_seg)[0]  # (bsz, seq, dim)
             start_layer = paddle.nn.Linear(in_features=768,out_features=1)
             start_logits = paddle.squeeze(start_layer(encoder_rep))
             start_prob_seq = paddle.nn.functional.softmax(start_logits, axis=1)
