@@ -120,8 +120,6 @@ class Argument(paddle.nn.Layer):
 
     
 
-
-
 class ArgumentTrain(object):
     def __init__(self, train_loader, valid_loader, args):
         self.args = args
