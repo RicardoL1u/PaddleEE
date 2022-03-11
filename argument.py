@@ -90,8 +90,8 @@ class Argument(paddle.nn.Layer):
         encoder_rep, cls_rep = self.roberta_encoder(input_ids=input_ids, token_type_ids=input_seg)[:2]  # (bsz, seq, axis)
         encoder_rep = self.encoder_linear(encoder_rep)
         cls_logits = self.cls_layer(cls_rep)
-        start_logits = paddle.squeeze(self.start_layer(encoder_rep))  # (bsz, seq)
-        end_logits = paddle.squeeze(self.end_layer(encoder_rep))  # (bsz, seq)
+        start_logits = paddle.squeeze(self.start_layer(encoder_rep),axis=-1)  # (bsz, seq)
+        end_logits = paddle.squeeze(self.end_layer(encoder_rep),axis=-1)  # (bsz, seq)
         # adopt softmax function across length dimension with masking mechanism
         start_logits = util.masked_fill(start_logits, input_mask == 0.0, -1e30)
         end_logits = util.masked_fill(end_logits, input_mask == 0.0, -1e30)

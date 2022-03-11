@@ -84,7 +84,7 @@ class DomDataset(Dataset):
         }
 
 class DomTrigger(paddle.nn.Layer):
-    def __init__(self,pre_train_dir: str, dropout_rate: float, alpha, beta):
+    def __init__(self,pre_train_dir: str, dropout_rate: float):
         super().__init__()
         self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
         self.encoder_linear = paddle.nn.Sequential(
@@ -98,8 +98,8 @@ class DomTrigger(paddle.nn.Layer):
         self.span1_layer = paddle.nn.Linear(in_features=768, out_features=1, bias_attr=False)
         self.span2_layer = paddle.nn.Linear(in_features=768, out_features=1, bias_attr=False)  
         self.selfc = paddle.nn.CrossEntropyLoss(weight=paddle.to_tensor([1.0,10.0],dtype='float32'), reduction="none")
-        self.alpha = alpha
-        self.beta = beta
+        # self.alpha = alpha
+        # self.beta = beta
         self.epsilon = 1e-6
     
     
@@ -112,10 +112,10 @@ class DomTrigger(paddle.nn.Layer):
         
         # 对于每一个token都做一个二分类
         # 判断其是否是trigger的start or end index
-        start_logits = paddle.squeeze(self.start_layer(encoder_rep)) # (bsz, seq, 2)
-        end_logits = paddle.squeeze(self.end_layer(encoder_rep))  # (bsz, seq, 2)
+        start_logits = paddle.squeeze(self.start_layer(encoder_rep),axis=-1) # (bsz, seq, 2)
+        end_logits = paddle.squeeze(self.end_layer(encoder_rep),axis=-1)  # (bsz, seq, 2)
         span1_logits = self.span1_layer(encoder_rep)  # (bsz, seq, 1)
-        span2_logits = paddle.squeeze(self.span2_layer(encoder_rep))  # (bsz, seq)
+        span2_logits = paddle.squeeze(self.span2_layer(encoder_rep),axis=-1)  # (bsz, seq)
         span_logits = paddle.tile(span1_logits,repeat_times=[1, 1, seq_len]) + paddle.tile(span2_logits[:, None, :],repeat_times=[1, seq_len, 1])
 
         # adopt softmax function across length dimension with masking mechanism
@@ -138,11 +138,11 @@ class DomTrigger(paddle.nn.Layer):
             sum_loss = start_loss + end_loss
             # 只考虑在context中的loss query中的loss去除
             sum_loss *= paddle.reshape(seq_mask,[-1,])
-            avg_se_loss = self.alpha * paddle.sum(sum_loss) / (paddle.nonzero(seq_mask, as_tuple=False).shape[0])
+            avg_se_loss =  paddle.sum(sum_loss) / (paddle.nonzero(seq_mask, as_tuple=False).shape[0])
 
             # 计算span loss
             span_loss = (-paddle.log(span_prob + self.epsilon)) * span_label
-            avg_span_loss = self.beta * paddle.sum(span_loss) / (paddle.nonzero(span_label, as_tuple=False).shape[0])
+            avg_span_loss = paddle.sum(span_loss) / (paddle.nonzero(span_label, as_tuple=False).shape[0])
             return avg_se_loss + avg_span_loss
 
 
@@ -153,8 +153,7 @@ class DomTrain(object):
         self.args = args
         self.train_loader = train_loader
         self.valid_loader = valid_loader
-        self.model = DomTrigger(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"], alpha=args["alpha"],
-                             beta=args["beta"])
+        self.model = DomTrigger(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"])
 
         param_optimizer = list(self.model.named_parameters())
         no_decay = ['bias', 'gamma', 'beta']
@@ -310,8 +309,6 @@ if __name__ == "__main__":
         "pre_train_dir": "bert-wwm-chinese",
         "clip_norm": 0.25,
         "dropout_rate": 0.5,
-        "alpha": 1.0,
-        "beta": 1.0,
     }
     paddle.set_device('gpu:0')
     with open("DataSet/process.p", "rb") as f:

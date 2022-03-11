@@ -67,8 +67,8 @@ class AuxTrigger(paddle.nn.Layer):
         encoder_rep = self.roberta_encoder(input_ids=input_ids,  token_type_ids=input_seg)[0]  # (bsz, seq, dim)
         encoder_rep = self.encoder_linear(encoder_rep)
         # TODO: why squeeze here? origin size is (bsz,seq,1)? YES
-        start_logits = paddle.squeeze(self.start_layer(encoder_rep)) # (bsz, seq)
-        end_logits = paddle.squeeze(self.end_layer(encoder_rep))  # (bsz, seq)
+        start_logits = paddle.squeeze(self.start_layer(encoder_rep),axis=-1) # (bsz, seq)
+        end_logits = paddle.squeeze(self.end_layer(encoder_rep),axis=-1)  # (bsz, seq)
         # adopt softmax function across length dimension with masking mechanism
         mask = input_mask == 0.0
         start_logits = util.masked_fill(start_logits, mask, -1e30)

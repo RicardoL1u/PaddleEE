@@ -289,9 +289,9 @@ if __name__ == "__main__":
     encode_obj = InputEncoder(max_len=max_len, tokenizer=tokenizer, special_query_token_map=special_map)
     decode_obj = OutputDecoder()
 
-    dominant_trigger_model = DomTrigger(pre_train_dir=pre_train_dir)
-    auxiliary_trigger_model = AuxTrigger(pre_train_dir=pre_train_dir)
-    argument_model = Argument(pre_train_dir=pre_train_dir)
+    dominant_trigger_model = DomTrigger(pre_train_dir=pre_train_dir,dropout_rate=0.0)
+    auxiliary_trigger_model = AuxTrigger(pre_train_dir=pre_train_dir,dropout_rate=0.0)
+    argument_model = Argument(pre_train_dir=pre_train_dir,dropout_rate=0.0)
     
     dominant_trigger_model.set_dict(paddle.load("ModelStorage/dominant_trigger.pth"))
     auxiliary_trigger_model.set_dict(paddle.load("ModelStorage/auxiliary_trigger.pth"))
@@ -317,6 +317,9 @@ if __name__ == "__main__":
                 input_ids=trigger_input["input_ids"], input_mask=trigger_input["input_mask"],
                 input_seg=trigger_input["input_seg"], span_mask=trigger_input["span_mask"]
             )
+            print(s_seq.shape)
+            print(e_seq.shape)
+            print(p_seq.shape)
             trigger_out = decode_obj.dominant_dec(context=context, s_seq=s_seq.cpu().numpy()[0], e_seq=e_seq.cpu().numpy()[0],
                                                   p_seq=p_seq.cpu().numpy()[0], context_range=trigger_input["context_range"],
                                                   n_triggers=n_triggers)
