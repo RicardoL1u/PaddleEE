@@ -1,6 +1,6 @@
 from paddle.io import DataLoader,Dataset
 from paddlenlp.transformers import BertTokenizer,BertModel
-from paddle import dtype, optimizer
+from paddle import optimizer
 import numpy as np
 import paddle
 import paddle.nn
