@@ -71,15 +71,7 @@ class InputEncoder(object):
         }
 
     def argument_enc(self, context, trigger, start, end, arg):
-        if arg == "object":
-            query = "处于位置&%d&和位置-%d-之间提到的*%s*事件的发起者为?" % (start, end, trigger)
-        elif arg == "subject":
-            query = "处于位置&%d&和位置-%d-之间提到的*%s*事件的行动对象为?" % (start, end, trigger)
-        elif arg == "time":
-            query = "处于位置&%d&和位置-%d-之间提到的*%s*事件发生的时间为?" % (start, end, trigger)
-        else:
-            query = "处于位置&%d&和位置-%d-之间提到的*%s*事件发生的地点为?" % (start, end, trigger)
-        # query = "处于位置&%d&和位置-%d-之间的触发词*%s*的%s为?" % (start, end, trigger, self.arg_map[arg])
+        query = util.generate_query(arg,start,end,trigger)
         query_tokens = []
         for i in query:
             if i in self.map.keys():
