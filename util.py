@@ -36,9 +36,9 @@ class WarmUp_LinearDecay:
 
 def generate_query(arg,start,end,trigger)->str:
     if arg == "object":
-        query = "处于位置&%d&和位置-%d-之间提到的*%s*事件的发起者为? 比如公司,政府党派,学校,政府,新闻机构,人名和虚构的人物形象" % (start, end, trigger)
+        query = "处于位置&%d&和位置-%d-之间提到的*%s*事件的发起者为? 比如公司,政府党派,学校,政府,新闻机构,人名,团体,队伍" % (start, end, trigger)
     elif arg == "subject":
-        query = "处于位置&%d&和位置-%d-之间提到的*%s*事件的行动对象为? 比如公司,政府党派,学校,政府,新闻机构,人名和虚构的人物形象" % (start, end, trigger)
+        query = "处于位置&%d&和位置-%d-之间提到的*%s*事件的行动对象为? 比如会议,活动,项目,计划,任务,事件,公司,政府党派,学校,政府,新闻机构,人名,团体,队伍" % (start, end, trigger)
     elif arg == "time":
         query = "处于位置&%d&和位置-%d-之间提到的*%s*事件发生的时间为? 比如年,月,日,季度,时刻" % (start, end, trigger)
     elif arg == "location":
