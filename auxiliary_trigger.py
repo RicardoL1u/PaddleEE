@@ -7,7 +7,7 @@ import pickle
 import util
 from util import WarmUp_LinearDecay
 import datetime
-class MyDataset(Dataset):
+class AuxDataset(Dataset):
     def __init__(self, data, tokenizer: BertTokenizer, max_len):
         self.data = data
         self.tokenizer = tokenizer
@@ -48,7 +48,7 @@ class MyDataset(Dataset):
             "end_index": end,
         }
 
-class MyModel(paddle.nn.Layer):
+class AuxModel(paddle.nn.Layer):
     # TODO: the name_scope and dtype is actually useless
     def __init__(self,pre_train_dir: str, dropout_rate: float, name_scope=None, dtype="float32"):
         super().__init__(name_scope, dtype)
@@ -90,11 +90,11 @@ class MyModel(paddle.nn.Layer):
 
 
 
-class Main(object):
+class AuxTrain(object):
     def __init__(self, train_loader, args):
         self.args = args
         self.train_loader = train_loader
-        self.model = MyModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"])
+        self.model = AuxModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"])
 
         param_optimizer = list(self.model.named_parameters())
         no_decay = ['bias', 'gamma', 'beta']
@@ -168,9 +168,9 @@ if __name__ == "__main__":
         x = pickle.load(f)
 
     tokenizer = BertTokenizer.from_pretrained('bert-wwm-chinese')
-    train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
+    train_dataset = AuxDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
 
     train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
 
-    m = Main(train_loader, args)
+    m = AuxTrain(train_loader, args)
     m.train()

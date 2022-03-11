@@ -11,7 +11,7 @@ import util
 from util import WarmUp_LinearDecay
 import datetime
 
-class MyDataset(Dataset):
+class DomDataset(Dataset):
     def __init__(self, data, tokenizer: BertTokenizer, max_len):
         self.data = data
         self.tokenizer = tokenizer
@@ -83,7 +83,7 @@ class MyDataset(Dataset):
             "span_mask": paddle.to_tensor(span_mask,dtype='float32')
         }
 
-class MyModel(paddle.nn.Layer):
+class DomModel(paddle.nn.Layer):
     def __init__(self,pre_train_dir: str, dropout_rate: float, alpha, beta):
         super().__init__()
         self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
@@ -148,12 +148,12 @@ class MyModel(paddle.nn.Layer):
 
 
 
-class Main(object):
+class DomTrain(object):
     def __init__(self, train_loader, valid_loader, args):
         self.args = args
         self.train_loader = train_loader
         self.valid_loader = valid_loader
-        self.model = MyModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"], alpha=args["alpha"],
+        self.model = DomModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"], alpha=args["alpha"],
                              beta=args["beta"])
 
         param_optimizer = list(self.model.named_parameters())
@@ -318,11 +318,11 @@ if __name__ == "__main__":
         x = pickle.load(f)
 
     tokenizer = BertTokenizer.from_pretrained("bert-wwm-chinese")
-    train_dataset = MyDataset(data=x["train_dominant_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
-    valid_dataset = MyDataset(data=x["valid_dominant_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
+    train_dataset = DomDataset(data=x["train_dominant_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
+    valid_dataset = DomDataset(data=x["valid_dominant_trigger_items"], tokenizer=tokenizer, max_len=args["max_len"])
 
     train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
     valid_loader = DataLoader(valid_dataset, batch_size=args["batch_size"], shuffle=False, num_workers=4)
 
-    m = Main(train_loader, valid_loader, args)
+    m = DomTrain(train_loader, valid_loader, args)
     m.train()
