@@ -246,5 +246,5 @@ for item in test_reader:
     )
 
 
-# with open("DataSet/test.p", "wb") as f:
-#     pickle.dump(output, f)
+with open("DataSet/process.p", "wb") as f:
+    pickle.dump(output, f)
