@@ -48,7 +48,7 @@ class AuxDataset(Dataset):
             "end_index": end,
         }
 
-class AuxModel(paddle.nn.Layer):
+class AuxTrigger(paddle.nn.Layer):
     # TODO: the name_scope and dtype is actually useless
     def __init__(self,pre_train_dir: str, dropout_rate: float, name_scope=None, dtype="float32"):
         super().__init__(name_scope, dtype)
@@ -94,7 +94,7 @@ class AuxTrain(object):
     def __init__(self, train_loader, args):
         self.args = args
         self.train_loader = train_loader
-        self.model = AuxModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"])
+        self.model = AuxTrigger(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"])
 
         param_optimizer = list(self.model.named_parameters())
         no_decay = ['bias', 'gamma', 'beta']
