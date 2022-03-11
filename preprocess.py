@@ -120,10 +120,10 @@ for item in train_reader:
         })
 
     # 处理论元
-    obj_tmp = {"type": "object", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间的触发词*%s*的主体为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
-    sub_tmp = {"type": "subject", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间的触发词*%s*的客体为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
-    tim_tmp = {"type": "time", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间的触发词*%s*的时间为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
-    loc_tmp = {"type": "location", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间的触发词*%s*的地点为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
+    obj_tmp = {"type": "object", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间提到的*%s*事件的发起者为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
+    sub_tmp = {"type": "subject", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间提到的*%s*事件的行动对象为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
+    tim_tmp = {"type": "time", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间提到的*%s*事件发生的时间为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
+    loc_tmp = {"type": "location", "id": item[0], "context": item[1], "query": "处于位置&%d&和位置-%d-之间提到的*%s*事件发生的地点为?" % (obj[-1]["start"], obj[-1]["end"], _trigger)}
     # 答案准备部分
     # 主体
     if _object == "":
