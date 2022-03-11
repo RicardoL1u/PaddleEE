@@ -252,7 +252,7 @@ if __name__ == "__main__":
         "max_steps": 12000,
         "min_lr_rate": 1e-9,
         "print_interval": 100,
-        "eval_interval": 1000,
+        "eval_interval": 500,
         "max_len": 512,
         "max_object_len": 25,  # 平均长度 7.22, 最大长度93
         "max_subject_len": 25,  # 平均长度10.0, 最大长度138
