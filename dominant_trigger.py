@@ -90,7 +90,7 @@ class DomTrigger(paddle.nn.Layer):
         self.encoder_linear = paddle.nn.Sequential(
             paddle.nn.Linear(in_features=768,out_features=768),
             paddle.nn.Tanh(),
-            paddle.nn.Dropout(),
+            paddle.nn.Dropout(dropout_rate),
         )
         self.start_layer = paddle.nn.Linear(in_features=768,out_features=2)
         self.end_layer = paddle.nn.Linear(in_features=768,out_features=2)
@@ -309,7 +309,7 @@ if __name__ == "__main__":
         "save_path": "ModelStorage/dominant_trigger.pth",
         "pre_train_dir": "bert-wwm-chinese",
         "clip_norm": 0.25,
-        "dropout_rate": 0.1,
+        "dropout_rate": 0.5,
         "alpha": 1.0,
         "beta": 1.0,
     }
