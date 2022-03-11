@@ -1,7 +1,6 @@
 from paddle.io import DataLoader,Dataset
 from paddlenlp.transformers import BertTokenizer,BertModel
-from paddle import dtype, optimizer
-import numpy as np
+from paddle import optimizer
 import paddle
 import paddle.nn
 import pickle
@@ -10,7 +9,7 @@ import pickle
 import util
 import datetime
 
-class MyDataset(Dataset):
+class ArgumentDataset(Dataset):
     def __init__(self, data, tokenizer: BertTokenizer, max_len, special_query_token_map: dict):
         self.data = data
         self.map = special_query_token_map
@@ -66,7 +65,7 @@ class MyDataset(Dataset):
         }
 
 
-class MyModel(paddle.nn.Layer):
+class Argument(paddle.nn.Layer):
     def __init__(self, pre_train_dir: str, dropout_rate: float):
         super().__init__()
         self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
@@ -140,12 +139,12 @@ class WarmUp_LinearDecay:
         self.optimizer.step()
 
 
-class Main(object):
+class ArgumentTrain(object):
     def __init__(self, train_loader, valid_loader, args):
         self.args = args
         self.train_loader = train_loader
         self.valid_loader = valid_loader
-        self.model = MyModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"])
+        self.model = Argument(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"])
 
         param_optimizer = list(self.model.named_parameters())
         no_decay = ['bias', 'gamma', 'beta']
@@ -288,11 +287,11 @@ if __name__ == "__main__":
         x = pickle.load(f)
 
     tokenizer = BertTokenizer.from_pretrained("bert-wwm-chinese")
-    train_dataset = MyDataset(data=x["train_argument_items"], tokenizer=tokenizer, max_len=args["max_len"], special_query_token_map=x["argument_query_special_map_token"])
-    valid_dataset = MyDataset(data=x["valid_argument_items"], tokenizer=tokenizer, max_len=args["max_len"], special_query_token_map=x["argument_query_special_map_token"])
+    train_dataset = ArgumentDataset(data=x["train_argument_items"], tokenizer=tokenizer, max_len=args["max_len"], special_query_token_map=x["argument_query_special_map_token"])
+    valid_dataset = ArgumentDataset(data=x["valid_argument_items"], tokenizer=tokenizer, max_len=args["max_len"], special_query_token_map=x["argument_query_special_map_token"])
 
     train_loader = DataLoader(train_dataset, batch_size=args["batch_size"], shuffle=True, num_workers=4)
     valid_loader = DataLoader(valid_dataset, batch_size=args["batch_size"], shuffle=False, num_workers=4)
 
-    m = Main(train_loader, valid_loader, args)
+    m = ArgumentTrain(train_loader, valid_loader, args)
     m.train()
