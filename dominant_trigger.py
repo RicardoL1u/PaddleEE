@@ -83,7 +83,7 @@ class DomDataset(Dataset):
             "span_mask": paddle.to_tensor(span_mask,dtype='float32')
         }
 
-class DomModel(paddle.nn.Layer):
+class DomTrigger(paddle.nn.Layer):
     def __init__(self,pre_train_dir: str, dropout_rate: float, alpha, beta):
         super().__init__()
         self.roberta_encoder = BertModel.from_pretrained(pre_train_dir)
@@ -153,7 +153,7 @@ class DomTrain(object):
         self.args = args
         self.train_loader = train_loader
         self.valid_loader = valid_loader
-        self.model = DomModel(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"], alpha=args["alpha"],
+        self.model = DomTrigger(pre_train_dir=args["pre_train_dir"], dropout_rate=args["dropout_rate"], alpha=args["alpha"],
                              beta=args["beta"])
 
         param_optimizer = list(self.model.named_parameters())
