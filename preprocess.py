@@ -122,10 +122,10 @@ for item in train_reader:
         })
 
     # 处理论元
-    obj_tmp = {"type": "object", "id": item[0], "context": item[1], "query": generate_query("time",obj[-1]["start"],obj[-1]["end"], _trigger)}
-    sub_tmp = {"type": "subject", "id": item[0], "context": item[1], "query": generate_query("time",obj[-1]["start"],obj[-1]["end"], _trigger)}
+    obj_tmp = {"type": "object", "id": item[0], "context": item[1], "query": generate_query("object",obj[-1]["start"],obj[-1]["end"], _trigger)}
+    sub_tmp = {"type": "subject", "id": item[0], "context": item[1], "query": generate_query("subject",obj[-1]["start"],obj[-1]["end"], _trigger)}
     tim_tmp = {"type": "time", "id": item[0], "context": item[1], "query": generate_query("time",obj[-1]["start"],obj[-1]["end"], _trigger)}
-    loc_tmp = {"type": "location", "id": item[0], "context": item[1], "query": generate_query("time",obj[-1]["start"],obj[-1]["end"], _trigger)}
+    loc_tmp = {"type": "location", "id": item[0], "context": item[1], "query": generate_query("location",obj[-1]["start"],obj[-1]["end"], _trigger)}
     # 答案准备部分
     # 主体
     if _object == "":

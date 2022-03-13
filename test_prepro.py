@@ -4,7 +4,7 @@ import csv
 import jieba
 import joint_predict
 
-class TestPreprocess(unittest.TestCase):
+class TestPre(unittest.TestCase):
     def __init__(self, methodName: str = ...) -> None:
         super().__init__(methodName)
         with open("DataSet/process.p", "rb") as f:
@@ -45,6 +45,14 @@ class TestPreprocess(unittest.TestCase):
             if cnt == 3:
                 break
 
+    def test_train(self):
+        train_arg_items = self.x["train_argument_items"]
+        cnt = 0
+        for item in train_arg_items:
+            print(item)
+            cnt+=1
+            if cnt == 3:
+                break
 
 if __name__ == "__main__":
     unittest.main()
