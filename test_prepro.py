@@ -54,5 +54,14 @@ class TestPre(unittest.TestCase):
             if cnt == 3:
                 break
 
+    def test_valid(self):
+        train_arg_items = self.x["valid_argument_items"]
+        cnt = 0
+        for item in train_arg_items:
+            print(item)
+            cnt+=1
+            if cnt == 3:
+                break
+
 if __name__ == "__main__":
     unittest.main()
