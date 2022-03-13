@@ -36,7 +36,7 @@ class WarmUp_LinearDecay:
 
 def generate_query(arg,start,end,trigger)->str:
     if arg == "object":
-        query = "后文中提到的*%s*事件的发起者(比如公司,政府党派,学校,政府,新闻机构,人名)为?" % (trigger)
+        query = "后文中提到的*%s*事件的发起者(比如公司,政府党派,学校,政府,机构,人名)为?" % (trigger)
     elif arg == "subject":
         query = "后文中提到的*%s*事件的行动对象(比如会议,活动,项目,计划,任务,以及组织,公司,人名)为?" % (trigger)
     elif arg == "time":
