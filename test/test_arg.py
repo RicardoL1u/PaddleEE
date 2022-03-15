@@ -1,4 +1,7 @@
 import unittest
+import sys
+sys.path.append("..")
+
 from paddlenlp.transformers import RobertaModel,RobertaTokenizer,BertModel,BertTokenizer
 from argument import MyDataset
 from paddle.io import DataLoader

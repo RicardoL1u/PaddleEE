@@ -1,4 +1,7 @@
 import unittest
+import sys
+sys.path.append("..")
+
 import pickle
 import joint_predict
 from paddlenlp.transformers import BertTokenizer,BertModel

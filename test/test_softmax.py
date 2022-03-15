@@ -1,4 +1,7 @@
 import unittest
+import sys
+sys.path.append("..")
+
 import paddle
 import paddle.nn
 class TestSoftmax(unittest.TestCase):

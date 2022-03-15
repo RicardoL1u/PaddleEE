@@ -1,4 +1,7 @@
 import unittest
+import sys
+sys.path.append("..")
+
 import pickle
 import dominant_trigger
 from paddlenlp.transformers import BertTokenizer
