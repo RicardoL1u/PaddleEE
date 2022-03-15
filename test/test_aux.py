@@ -3,7 +3,7 @@ import sys
 sys.path.append("..")
 
 from paddlenlp.transformers import RobertaModel,RobertaTokenizer,BertModel,BertTokenizer
-from auxiliary_trigger import MyDataset
+from auxiliary_trigger import AuxDataset
 from paddle.io import DataLoader
 import pickle
 import paddle
@@ -26,7 +26,7 @@ class TestAux(unittest.TestCase):
 
     #     # tokenizer = BertTokenizer(vocab_file="/home/ldmc/quanlin/Pretrained_NLP_Models/Pytorch/RoBERTa_Large_ZH/vocab.txt")
     #     tokenizer = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
-    #     train_dataset = MyDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=256)
+    #     train_dataset = AuxDataset(data=x["train_aux_trigger_items"], tokenizer=tokenizer, max_len=256)
     #     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
     #     # for item in train_loader
     #     tokens = tokenizer("这是一次测试，我不知道测试结果会咋样")
@@ -40,7 +40,7 @@ class TestAux(unittest.TestCase):
         print(pooled_output.shape)
 
     def test_trainset(self):
-        train_dataset = MyDataset(data=self.x["train_aux_trigger_items"], tokenizer=self.tokenizer, max_len=256)
+        train_dataset = AuxDataset(data=self.x["train_aux_trigger_items"], tokenizer=self.tokenizer, max_len=256)
         train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=4)
         for item in train_loader:
             input_ids, input_mask, input_seg, start_index, end_index = \
