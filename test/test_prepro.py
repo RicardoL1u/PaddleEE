@@ -9,7 +9,7 @@ import joint_predict
 class TestPre(unittest.TestCase):
     def __init__(self, methodName: str = ...) -> None:
         super().__init__(methodName)
-        with open("DataSet/process.p", "rb") as f:
+        with open("../DataSet/process.p", "rb") as f:
             self.x = pickle.load(f)
 
     def test_pfile(self):

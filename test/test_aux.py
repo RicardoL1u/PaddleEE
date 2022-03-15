@@ -8,11 +8,10 @@ from paddle.io import DataLoader
 import pickle
 import paddle
 import paddle.nn
-import sys
 class TestAux(unittest.TestCase):
     def __init__(self, methodName: str = ...) -> None:
         super().__init__(methodName)
-        with open("DataSet/process.p", "rb") as f:
+        with open("../DataSet/process.p", "rb") as f:
             self.x = pickle.load(f)
         # tokenizer = RobertaTokenizer.from_pretrained('roberta-wwm-ext')
         # model = RobertaModel.from_pretrained('roberta-wwm-ext')
@@ -21,7 +20,7 @@ class TestAux(unittest.TestCase):
         self.model = BertModel.from_pretrained('bert-wwm-chinese')
 
     # def test_dataloader(self):
-    #     with open("DataSet/process.p", "rb") as f:
+    #     with open("../DataSet/process.p", "rb") as f:
     #         x = pickle.load(f)
 
     #     # tokenizer = BertTokenizer(vocab_file="/home/ldmc/quanlin/Pretrained_NLP_Models/Pytorch/RoBERTa_Large_ZH/vocab.txt")

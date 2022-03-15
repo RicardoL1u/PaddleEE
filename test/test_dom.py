@@ -12,7 +12,7 @@ class TestDom(unittest.TestCase):
         super().__init__(methodName)
         self.max_len = 64
         self.bsz = 2
-        with open("DataSet/process.p", "rb") as f:
+        with open("../DataSet/process.p", "rb") as f:
             self.x = pickle.load(f)
         self.tokenizer = BertTokenizer.from_pretrained("bert-wwm-chinese")
         

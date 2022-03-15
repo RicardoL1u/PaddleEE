@@ -15,7 +15,7 @@ class TestJoint(unittest.TestCase):
     def __init__(self, methodName: str = ...) -> None:
         super().__init__(methodName)
         paddle.set_printoptions(threshold=256*256)
-        with open("DataSet/process.p", "rb") as f:
+        with open("../DataSet/process.p", "rb") as f:
             x = pickle.load(f)
             self.test_items, self.special_map = x["test_items"], x["argument_query_special_map_token"]
         self.max_len = 128

@@ -11,7 +11,7 @@ import paddle.nn
 
 class TestArg(unittest.TestCase):
     def test_cls(self):
-        with open("DataSet/process.p", "rb") as f:
+        with open("../DataSet/process.p", "rb") as f:
             x = pickle.load(f)
 
         tokenizer = BertTokenizer.from_pretrained('bert-wwm-chinese')
