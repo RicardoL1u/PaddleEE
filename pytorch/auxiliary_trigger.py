@@ -2,8 +2,8 @@
 # -*- coding:utf-8 -*-
 """
     @Time: 2020-07-19
-    @Author: menghuanlater
-    @Software: Pycharm 2019.2
+    @Author: RicardoLiu
+    @Software: VSC 2019.2
     @Usage:
 -----------------------------
     Description: 辅助触发词识别模型 ==> 训练2000步之后结束, 该模型无验证集
